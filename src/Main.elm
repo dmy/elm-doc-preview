@@ -77,20 +77,30 @@ view model =
     , body =
         [ div [ class "center" ]
             [ page model
-            , div
-                [ class "pkg-nav"
-                ]
-                [ logo
-                , filesInput
-                , navigation model.page [ Readme ]
-                , model.modules
-                    |> List.map (\m -> Module m.name)
-                    |> navigation model.page
-                ]
+            , navigation model
             ]
         , footer
         ]
     }
+
+
+navigation : Model -> Html Msg
+navigation model =
+    div
+        [ class "pkg-nav"
+        ]
+        [ logo
+        , filesInput
+        , case model.readme of
+            Just _ ->
+                links model.page [ Readme ]
+
+            Nothing ->
+                text ""
+        , model.modules
+            |> List.map (\m -> Module m.name)
+            |> links model.page
+        ]
 
 
 logo : Html msg
@@ -488,8 +498,8 @@ filesInput =
         ]
 
 
-navigation : Page -> List Page -> Html msg
-navigation currentPage pages =
+links : Page -> List Page -> Html msg
+links currentPage pages =
     ul [ style "margin-top" "20px" ]
         (List.map (link currentPage) pages)
 
