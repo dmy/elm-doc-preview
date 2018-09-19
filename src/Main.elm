@@ -374,11 +374,15 @@ lambda t1 t2 =
 
 tuple : List Type.Type -> Html msg
 tuple types =
-    span []
-        [ text "( "
-        , tipes WithoutParentheses ", " types
-        , text " )"
-        ]
+    if List.isEmpty types then
+        text "()"
+
+    else
+        span []
+            [ text "( "
+            , tipes WithoutParentheses ", " types
+            , text " )"
+            ]
 
 
 typ : ParameterizedTypeStyle -> String -> List Type.Type -> Html msg
