@@ -24,6 +24,10 @@
             }
         });
 
+        app.ports.clearStorage.subscribe(function () {
+            localStorage.clear();
+        });
+
         app.ports.filesSelected.subscribe(function (files) {
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];

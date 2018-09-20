@@ -7,7 +7,7 @@ import Elm.Docs as Docs
 import Elm.Type as Type
 import Html exposing (Html, a, code, div, h1, input, li, span, text, ul)
 import Html.Attributes exposing (class, href, id, multiple, name, src, style, title, type_)
-import Html.Events exposing (on)
+import Html.Events exposing (on, onClick)
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
 import Svg exposing (svg)
@@ -21,6 +21,9 @@ import Utils.Markdown as Markdown
 
 
 port filesSelected : Decode.Value -> Cmd msg
+
+
+port clearStorage : () -> Cmd msg
 
 
 port readmeReceived : (String -> msg) -> Sub msg
@@ -39,6 +42,7 @@ type Msg
     | ModulesReceived Decode.Value
     | UrlRequested UrlRequest
     | UrlChanged Url
+    | Close
 
 
 type alias Model =
@@ -124,6 +128,7 @@ navigation model =
         ]
         [ logo
         , filesInput
+        , closeLink model
         , case model.readme of
             Just _ ->
                 navLinks model.page [ Readme ]
@@ -134,6 +139,21 @@ navigation model =
             |> List.map (\m -> Module m.name)
             |> navLinks model.page
         ]
+
+
+closeLink : Model -> Html Msg
+closeLink model =
+    if model.readme == Nothing && model.modules == [] then
+        text ""
+
+    else
+        div [ style "margin-top" "20px" ]
+            [ a
+                [ href "/"
+                , onClick Close
+                ]
+                [ text "Close Preview" ]
+            ]
 
 
 logo : Html msg
@@ -256,7 +276,7 @@ navLink currentPage targetPage =
             [ class "pkg-nav-module"
             , case targetPage of
                 Readme ->
-                    href ""
+                    href "/"
 
                 Module name ->
                     href ("/" ++ String.replace "." "-" name)
@@ -305,6 +325,15 @@ footer =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Close ->
+            ( { model
+                | readme = Nothing
+                , modules = []
+                , page = Readme
+              }
+            , clearStorage ()
+            )
+
         FilesSelected files ->
             ( model
             , filesSelected files
