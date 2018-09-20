@@ -1,46 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Elm package documentation previewer">
-    <title>Elm Doc Preview</title>
-    <link href="style.css" rel="stylesheet">
-    <link rel="shortcut icon" size="16x16, 32x32, 48x48, 64x64, 128x128, 256x256" href="favicon.ico">
-    <link href="highlight/styles/default.css" rel="stylesheet">
-    
-    <script src="highlight/highlight.pack.js"></script>
-    <script src="elm.js"></script>
+    <script type="text/javascript">
+      window.location = "https://elm-doc-preview.netlify.com"
+    </script>
   </head>
   <body>
-    <div id="elm"></div>
-    <script type="text/javascript">
-      var app = Elm.Main.init({
-         node: document.getElementById('elm'),
-         flags: null
-      });
-  
-      app.ports.filesSelected.subscribe(function (files) {
-        for (var i = 0; i < files.length; i++) {
-            var file = files[i];
-            var reader = new FileReader();
-  
-            if (file.name == "README.md") {
-                reader.onload = (function(event) {
-                    var content = event.target.result;
-                    app.ports.readmeReceived.send(content);
-                });
-            } else if (file.name == "docs.json") {
-                reader.onload = (function(event) {
-                    var content = event.target.result;
-                    modules = JSON.parse(content);
-                    app.ports.modulesReceived.send(modules);
-                });
-            }
-            reader.readAsText(file);
-         };
-      });
-    </script>
   </body>
 </html>

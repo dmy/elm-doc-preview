@@ -1,0 +1,13 @@
+{
+  "name": "elm-doc-preview",
+  "dependencies": {},
+  "devDependencies": {
+    "elm": "^0.19.0-bugfix2",
+    "elm-minify": "^1.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmy/elm-doc-preview.git"
+  },
+  "license": "BSD-3-Clause"
+}

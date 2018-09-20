@@ -1,17 +1,19 @@
 port module Main exposing (main)
 
+import Block
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Elm.Docs as Docs
 import Elm.Type as Type
 import Html exposing (Html, a, code, div, h1, input, li, span, text, ul)
 import Html.Attributes exposing (class, href, id, multiple, name, src, style, title, type_)
-import Html.Events exposing (on)
+import Html.Events exposing (on, onClick)
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
 import Url exposing (Url)
+import Utils.Markdown as Markdown
 
 
 
@@ -19,6 +21,9 @@ import Url exposing (Url)
 
 
 port filesSelected : Decode.Value -> Cmd msg
+
+
+port clearStorage : () -> Cmd msg
 
 
 port readmeReceived : (String -> msg) -> Sub msg
@@ -37,6 +42,7 @@ type Msg
     | ModulesReceived Decode.Value
     | UrlRequested UrlRequest
     | UrlChanged Url
+    | Close
 
 
 type alias Model =
@@ -56,14 +62,45 @@ type Page
 -- INIT
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
+type alias Flags =
+    { readme : Maybe String
+    , docs : Maybe String
+    }
+
+
+init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { readme = Nothing
-      , modules = []
+    let
+        modules =
+            case flags.docs of
+                Just docs ->
+                    Decode.decodeString (Decode.list Docs.decoder) docs
+                        |> Result.withDefault []
+
+                Nothing ->
+                    []
+
+        requestedModule =
+            urlToModule url
+
+        requestedPage =
+            if List.member requestedModule (List.map .name modules) then
+                Module requestedModule
+
+            else
+                Readme
+    in
+    ( { readme = flags.readme
+      , modules = modules
       , key = key
-      , page = Readme
+      , page = requestedPage
       }
-    , Nav.replaceUrl key url.path
+    , if not (String.isEmpty url.path) && requestedPage == Readme then
+        -- Remove not found module from URL
+        Nav.replaceUrl key "/"
+
+      else
+        Cmd.none
     )
 
 
@@ -91,16 +128,32 @@ navigation model =
         ]
         [ logo
         , filesInput
+        , closeLink model
         , case model.readme of
             Just _ ->
-                links model.page [ Readme ]
+                navLinks model.page [ Readme ]
 
             Nothing ->
                 text ""
         , model.modules
             |> List.map (\m -> Module m.name)
-            |> links model.page
+            |> navLinks model.page
         ]
+
+
+closeLink : Model -> Html Msg
+closeLink model =
+    if model.readme == Nothing && model.modules == [] then
+        text ""
+
+    else
+        div [ style "margin-top" "20px" ]
+            [ a
+                [ href "/"
+                , onClick Close
+                ]
+                [ text "Close Preview" ]
+            ]
 
 
 logo : Html msg
@@ -136,20 +189,24 @@ page model =
             Readme ->
                 case model.readme of
                     Just readme ->
-                        [ markdown readme ]
+                        [ Markdown.block readme ]
 
                     Nothing ->
                         if List.isEmpty model.modules then
-                            [ markdown howto ]
+                            [ Markdown.block howto ]
 
                         else
-                            [ markdown howtoWithModules ]
+                            [ Markdown.block howtoWithModules ]
 
             Module name ->
-                model.modules
-                    |> List.filter (\m -> m.name == name)
-                    |> List.map doc
-                    |> List.concat
+                case List.filter (\m -> m.name == name) model.modules of
+                    [ module_ ] ->
+                        doc model.modules module_
+
+                    _ ->
+                        [ h1 [] [ text "Error" ]
+                        , text "Module not found."
+                        ]
 
 
 howto : String
@@ -172,311 +229,15 @@ Select a module and optionally add a `README.md` file.
 """
 
 
-doc : Docs.Module -> List (Html msg)
-doc docs =
-    h1 [ class "block-list-title" ]
-        [ text docs.name ]
-        :: List.map block (Docs.toBlocks docs)
-
-
-block : Docs.Block -> Html msg
-block b =
-    case b of
-        Docs.MarkdownBlock string ->
-            markdown string
-
-        Docs.UnionBlock union ->
-            unionBlock union
-
-        Docs.AliasBlock alias ->
-            aliasBlock alias
-
-        Docs.ValueBlock value ->
-            valueBlock value
-
-        Docs.BinopBlock binop ->
-            binopBlock binop
-
-        Docs.UnknownBlock string ->
-            div [] [ text string ]
-
-
-type ParameterizedTypeStyle
-    = WithParentheses
-    | WithoutParentheses
-
-
-unionBlock : Docs.Union -> Html msg
-unionBlock union =
-    div [ class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ span [ class "hljs-keyword" ] [ text "type" ]
-            , text " "
-            , span [ class "hljs-type" ] [ text union.name ]
-            , text " "
-            , text (String.join " " union.args)
-            , tags union.tags
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown union.comment
-            ]
-        ]
-
-
-aliasBlock : Docs.Alias -> Html msg
-aliasBlock alias =
-    div [ class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ span [ class "hljs-keyword" ] [ text "type" ]
-            , text " "
-            , span [ class "hljs-keyword" ] [ text "alias" ]
-            , text " "
-            , span [ class "hljs-type" ] [ text alias.name ]
-            , text " "
-            , if List.length alias.args > 0 then
-                text (String.join " " alias.args ++ " = ")
-
-              else
-                text "="
-            , indent []
-                [ tipe WithoutParentheses alias.tipe
-                ]
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown alias.comment
-            ]
-        ]
-
-
-valueBlock : Docs.Value -> Html msg
-valueBlock value =
-    div [ class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ span
-                [ class "hljs-title"
-                , style "font-weight" "bold"
-                ]
-                [ text value.name
-                ]
-            , text " : "
-            , tipe WithoutParentheses value.tipe
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown value.comment
-            ]
-        ]
-
-
-binopBlock : Docs.Binop -> Html msg
-binopBlock binop =
-    div [ class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ span
-                [ class "hljs-title"
-                , style "font-weight" "bold"
-                ]
-                [ text "("
-                , text binop.name
-                , text ")"
-                ]
-            , text " : "
-            , tipe WithoutParentheses binop.tipe
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown binop.comment
-            ]
-        ]
-
-
-tags : List ( String, List Type.Type ) -> Html msg
-tags tags_ =
-    case tags_ of
-        [] ->
-            text ""
-
-        t :: ts ->
-            div []
-                (tag "=" t :: List.map (tag "|") ts)
-
-
-tag : String -> ( String, List Type.Type ) -> Html msg
-tag prefix ( name, types ) =
-    indent []
-        [ text (prefix ++ " ")
-        , span [ class "hljs-literal" ] [ text name ]
-        , text " "
-        , tipes WithParentheses " " types
-        ]
-
-
-indent : List (Html.Attribute msg) -> List (Html msg) -> Html msg
-indent attributes children =
-    div (style "margin-left" "2rem" :: attributes) children
-
-
-indentIf : Bool -> List (Html.Attribute msg) -> List (Html msg) -> Html msg
-indentIf cond attributes children =
-    if cond then
-        indent attributes children
-
-    else
-        span attributes children
-
-
-tipe : ParameterizedTypeStyle -> Type.Type -> Html msg
-tipe typeStyle t =
-    case t of
-        Type.Var string ->
-            var string
-
-        Type.Lambda t1 t2 ->
-            lambda t1 t2
-
-        Type.Tuple list ->
-            tuple list
-
-        Type.Type name types ->
-            typ typeStyle name types
-
-        Type.Record fields_ rowType ->
-            record fields_ rowType
-
-
-tipes : ParameterizedTypeStyle -> String -> List Type.Type -> Html msg
-tipes typeStyle separator types =
-    List.map (tipe typeStyle) types
-        |> List.intersperse (text separator)
-        |> span []
-
-
-var : String -> Html msg
-var string =
-    text string
-
-
-lambda : Type.Type -> Type.Type -> Html msg
-lambda t1 t2 =
-    span []
-        [ case t1 of
-            Type.Lambda _ _ ->
-                span []
-                    [ text "("
-                    , tipe WithoutParentheses t1
-                    , text ")"
-                    ]
-
-            _ ->
-                tipe WithoutParentheses t1
-        , text " -> "
-        , tipe WithoutParentheses t2
-        ]
-
-
-tuple : List Type.Type -> Html msg
-tuple types =
-    if List.isEmpty types then
-        text "()"
-
-    else
-        span []
-            [ text "( "
-            , tipes WithoutParentheses ", " types
-            , text " )"
-            ]
-
-
-typ : ParameterizedTypeStyle -> String -> List Type.Type -> Html msg
-typ typeStyle name types =
+doc : List Docs.Module -> Docs.Module -> List (Html msg)
+doc modules module_ =
     let
-        shortName =
-            name
-                |> String.split "."
-                |> List.reverse
-                |> List.head
-                |> Maybe.withDefault name
+        info =
+            Block.makeInfo module_.name modules
     in
-    if List.isEmpty types then
-        span [ title name, class "hljs-type" ] [ text shortName ]
-
-    else if typeStyle == WithParentheses then
-        span []
-            [ text "("
-            , span [ title name, class "hljs-type" ] [ text shortName ]
-            , text " "
-            , tipes WithoutParentheses " " types
-            , text ")"
-            ]
-
-    else
-        span []
-            [ span [ title name, class "hljs-type" ] [ text shortName ]
-            , text " "
-            , tipes WithoutParentheses " " types
-            ]
-
-
-record : List ( String, Type.Type ) -> Maybe String -> Html msg
-record fields_ rowType =
-    case rowType of
-        Just r ->
-            indentIf (List.length fields_ > 1)
-                []
-                [ text "{ "
-                , text r
-                , indentIf (List.length fields_ > 1)
-                    []
-                    [ fields "|" fields_
-                    ]
-                , text "}"
-                ]
-
-        Nothing ->
-            indentIf (List.length fields_ > 1)
-                []
-                [ fields "{" fields_
-                , text "}"
-                ]
-
-
-fields : String -> List ( String, Type.Type ) -> Html msg
-fields prefix list =
-    case list of
-        f :: fs ->
-            span []
-                (field span prefix f
-                    :: List.map (field div ",") fs
-                )
-
-        [] ->
-            text prefix
-
-
-field :
-    (List (Html.Attribute msg) -> List (Html msg) -> Html msg)
-    -> String
-    -> ( String, Type.Type )
-    -> Html msg
-field element prefix ( fieldName, fieldType ) =
-    element []
-        [ text (prefix ++ " ")
-        , text fieldName
-        , text " : "
-        , tipe WithoutParentheses fieldType
-        ]
-
-
-markdownOptions : Markdown.Options
-markdownOptions =
-    { githubFlavored = Just { tables = False, breaks = False }
-    , defaultHighlighting = Just "elm"
-    , sanitize = True
-    , smartypants = True
-    }
-
-
-markdown : String -> Html msg
-markdown string =
-    Markdown.toHtmlWith markdownOptions [] string
+    h1 [ class "block-list-title" ]
+        [ text module_.name ]
+        :: List.map (Block.view info) (Docs.toBlocks module_)
 
 
 
@@ -502,23 +263,23 @@ filesInput =
         ]
 
 
-links : Page -> List Page -> Html msg
-links currentPage pages =
+navLinks : Page -> List Page -> Html msg
+navLinks currentPage pages =
     ul [ style "margin-top" "20px" ]
-        (List.map (link currentPage) pages)
+        (List.map (navLink currentPage) pages)
 
 
-link : Page -> Page -> Html msg
-link currentPage targetPage =
+navLink : Page -> Page -> Html msg
+navLink currentPage targetPage =
     li []
         [ a
             [ class "pkg-nav-module"
             , case targetPage of
                 Readme ->
-                    href ""
+                    href "/"
 
                 Module name ->
-                    href ("#/" ++ name)
+                    href ("/" ++ String.replace "." "-" name)
             , if currentPage == targetPage then
                 style "font-weight" "bold"
 
@@ -564,6 +325,15 @@ footer =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Close ->
+            ( { model
+                | readme = Nothing
+                , modules = []
+                , page = Readme
+              }
+            , clearStorage ()
+            )
+
         FilesSelected files ->
             ( model
             , filesSelected files
@@ -594,7 +364,13 @@ update msg model =
             case request of
                 Internal url ->
                     ( model
-                    , Nav.pushUrl model.key (Url.toString url)
+                    , case url.fragment of
+                        Just _ ->
+                            -- scroll to anchor
+                            Nav.load (Url.toString url)
+
+                        Nothing ->
+                            Nav.pushUrl model.key (Url.toString url)
                     )
 
                 External url ->
@@ -607,14 +383,12 @@ update msg model =
                 modules =
                     List.map .name model.modules
 
-                segment =
-                    url.fragment
-                        |> Maybe.map (String.dropLeft 1)
-                        |> Maybe.withDefault ""
+                module_ =
+                    urlToModule url
             in
-            case List.member segment modules of
+            case List.member module_ modules of
                 True ->
-                    ( { model | page = Module segment }
+                    ( { model | page = Module module_ }
                     , Cmd.none
                     )
 
@@ -622,6 +396,16 @@ update msg model =
                     ( { model | page = Readme }
                     , Cmd.none
                     )
+
+
+urlToModule : Url -> String
+urlToModule url =
+    url.path
+        |> String.split "/"
+        |> List.reverse
+        |> List.head
+        |> Maybe.withDefault url.path
+        |> String.replace "-" "."
 
 
 subscriptions : Model -> Sub Msg
@@ -636,7 +420,7 @@ subscriptions model =
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.application
         { init = init
