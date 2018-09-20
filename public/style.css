@@ -326,3 +326,13 @@ Not really any of those on the website though AFAIK.
   content: "\00a0";
 }
 
+.files-input {
+  color: #1184CE;
+  text-decoration: none;
+  cursor: pointer;
+}
+.files-input:hover {
+  color: rgb(234,21,122);
+  text-decoration: underline;
+  font-weight: bold;
+}

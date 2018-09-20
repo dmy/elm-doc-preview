@@ -5,8 +5,8 @@ import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Elm.Docs as Docs
 import Elm.Type as Type
-import Html exposing (Html, a, code, div, h1, input, li, span, text, ul)
-import Html.Attributes exposing (class, href, id, multiple, name, src, style, title, type_)
+import Html exposing (Html, a, code, div, h1, input, label, li, span, text, ul)
+import Html.Attributes exposing (class, for, href, id, multiple, name, src, style, title, type_)
 import Html.Events exposing (on, onClick, preventDefaultOn)
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
@@ -189,7 +189,9 @@ closeLink model =
 logo : Html msg
 logo =
     div
-        [ style "display" "flex" ]
+        [ style "display" "flex"
+        , style "transform" "translateX(-8px)"
+        ]
         [ svg
             [ width "50px", height "70px", viewBox "0 0 210 297" ]
             [ Svg.path [ d "M61.8 132v92.7l46.3-46.3-46.3-46.3z", fill "#60b5cc" ] []
@@ -246,7 +248,7 @@ howto =
 
 Open a package `README.md`, `docs.json` (generated with `elm make --docs`) or both.
 
-Use the side button or drop files anywhere in the page.
+Click "Open Files" on the side or drop files anywhere in the page.
 """
 
 
@@ -276,12 +278,17 @@ doc modules module_ =
 filesInput : Html Msg
 filesInput =
     div
-        [ style "display" "flex"
-        , style "align-items" "center"
-        , style "height" "38px"
-        ]
-        [ input
-            [ type_ "file"
+        []
+        [ label
+            [ for "files-input"
+            , class "files-input"
+            ]
+            [ span [] [ text "Open Files" ]
+            ]
+        , input
+            [ id "files-input"
+            , type_ "file"
+            , style "display" "none"
             , multiple True
             , on "change"
                 (Decode.at [ "target", "files" ] Decode.value
