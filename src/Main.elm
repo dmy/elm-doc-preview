@@ -7,7 +7,7 @@ import Elm.Docs as Docs
 import Elm.Type as Type
 import Html exposing (Html, a, code, div, h1, input, li, span, text, ul)
 import Html.Attributes exposing (class, href, id, multiple, name, src, style, title, type_)
-import Html.Events exposing (on, onClick)
+import Html.Events exposing (on, onClick, preventDefaultOn)
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
 import Svg exposing (svg)
@@ -18,6 +18,9 @@ import Utils.Markdown as Markdown
 
 
 -- PORTS
+
+
+port filesDropped : Decode.Value -> Cmd msg
 
 
 port filesSelected : Decode.Value -> Cmd msg
@@ -37,12 +40,14 @@ port modulesReceived : (Decode.Value -> msg) -> Sub msg
 
 
 type Msg
-    = FilesSelected Decode.Value
-    | ReadmeReceived String
+    = NoOp
+    | Close
+    | FilesDropped Decode.Value
+    | FilesSelected Decode.Value
     | ModulesReceived Decode.Value
+    | ReadmeReceived String
     | UrlRequested UrlRequest
     | UrlChanged Url
-    | Close
 
 
 type alias Model =
@@ -112,13 +117,38 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Elm Doc Preview"
     , body =
-        [ div [ class "center" ]
-            [ page model
-            , navigation model
+        [ div
+            [ style "min-width" "100%"
+            , style "min-height" "100%"
+            , style "display" "flex"
+            , style "flex-direction" "column"
+            , preventDefaultOn "drop"
+                (Decode.at [ "dataTransfer", "items" ] Decode.value
+                    |> Decode.map (\items -> ( FilesDropped items, True ))
+                )
+            , stopDragOver
             ]
-        , footer
+            [ div
+                [ class "center"
+                , style "flex" "1"
+                ]
+                [ page model
+                , navigation model
+                ]
+            , footer
+            ]
         ]
     }
+
+
+stopDragOver : Html.Attribute Msg
+stopDragOver =
+    preventDefaultOn "dragover" (Decode.map alwaysPreventDefault (Decode.succeed NoOp))
+
+
+alwaysPreventDefault : msg -> ( msg, Bool )
+alwaysPreventDefault msg =
+    ( msg, True )
 
 
 navigation : Model -> Html Msg
@@ -182,7 +212,7 @@ logo =
         ]
 
 
-page : Model -> Html msg
+page : Model -> Html Msg
 page model =
     div [ class "block-list" ] <|
         case model.page of
@@ -215,6 +245,8 @@ howto =
 # Elm Documentation Previewer
 
 Open a package `README.md`, `docs.json` (generated with `elm make --docs`) or both.
+
+Use the side button or drop files anywhere in the page.
 """
 
 
@@ -233,8 +265,7 @@ doc modules module_ =
         info =
             Block.makeInfo module_.name modules
     in
-    h1 [ class "block-list-title" ]
-        [ text module_.name ]
+    h1 [ class "block-list-title" ] [ text module_.name ]
         :: List.map (Block.view info) (Docs.toBlocks module_)
 
 
@@ -323,6 +354,9 @@ footer =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
         Close ->
             ( { model
                 | readme = Nothing
@@ -330,6 +364,11 @@ update msg model =
                 , page = Readme
               }
             , clearStorage ()
+            )
+
+        FilesDropped files ->
+            ( model
+            , filesDropped files
             )
 
         FilesSelected files ->

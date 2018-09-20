@@ -28,28 +28,41 @@
             localStorage.clear();
         });
 
+        app.ports.filesDropped.subscribe(function (files) {
+            for (var i = 0; i < files.length; i++) {
+                if (files[i].kind === 'file') {
+                    var file = files[i].getAsFile();
+                    console.log('... file[' + i + '].name = ' + file.name);
+                    handleFile(file);
+                }
+            }
+        });
+
         app.ports.filesSelected.subscribe(function (files) {
             for (var i = 0; i < files.length; i++) {
-                var file = files[i];
-                var reader = new FileReader();
-
-                if (file.name == "README.md") {
-                    reader.onload = (function(event) {
-                        var content = event.target.result;
-                        localStorage.readme = content;
-                        app.ports.readmeReceived.send(content);
-                    });
-                } else if (file.name == "docs.json") {
-                    reader.onload = (function(event) {
-                        var content = event.target.result;
-                        localStorage.docs = content;
-                        modules = JSON.parse(content);
-                        app.ports.modulesReceived.send(modules);
-                    });
-                }
-                reader.readAsText(file);
+                handleFile(files[i]);
             };
         });
+
+        function handleFile(file) {
+            var reader = new FileReader();
+
+            if (file.name == "README.md") {
+                reader.onload = (function(event) {
+                    var content = event.target.result;
+                    localStorage.readme = content;
+                    app.ports.readmeReceived.send(content);
+                });
+            } else if (file.name == "docs.json") {
+                reader.onload = (function(event) {
+                    var content = event.target.result;
+                    localStorage.docs = content;
+                    modules = JSON.parse(content);
+                    app.ports.modulesReceived.send(modules);
+                });
+            }
+            reader.readAsText(file);
+        }
     </script>
   </body>
 </html>
