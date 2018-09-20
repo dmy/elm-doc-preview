@@ -16,31 +16,36 @@
   <body>
     <div id="elm"></div>
     <script type="text/javascript">
-      var app = Elm.Main.init({
-         node: document.getElementById('elm'),
-         flags: null
-      });
-  
-      app.ports.filesSelected.subscribe(function (files) {
-        for (var i = 0; i < files.length; i++) {
-            var file = files[i];
-            var reader = new FileReader();
-  
-            if (file.name == "README.md") {
-                reader.onload = (function(event) {
-                    var content = event.target.result;
-                    app.ports.readmeReceived.send(content);
-                });
-            } else if (file.name == "docs.json") {
-                reader.onload = (function(event) {
-                    var content = event.target.result;
-                    modules = JSON.parse(content);
-                    app.ports.modulesReceived.send(modules);
-                });
+        var app = Elm.Main.init({
+            node: document.getElementById('elm'),
+            flags: {
+                readme: localStorage.readme ? localStorage.readme : null,
+                docs: localStorage.docs ? localStorage.docs : null
             }
-            reader.readAsText(file);
-         };
-      });
+        });
+
+        app.ports.filesSelected.subscribe(function (files) {
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                var reader = new FileReader();
+
+                if (file.name == "README.md") {
+                    reader.onload = (function(event) {
+                        var content = event.target.result;
+                        localStorage.readme = content;
+                        app.ports.readmeReceived.send(content);
+                    });
+                } else if (file.name == "docs.json") {
+                    reader.onload = (function(event) {
+                        var content = event.target.result;
+                        localStorage.docs = content;
+                        modules = JSON.parse(content);
+                        app.ports.modulesReceived.send(modules);
+                    });
+                }
+                reader.readAsText(file);
+            };
+        });
     </script>
   </body>
 </html>

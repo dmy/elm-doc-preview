@@ -63,10 +63,26 @@ pathroot =
 -- INIT
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
+type alias Flags =
+    { readme : Maybe String
+    , docs : Maybe String
+    }
+
+
+init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { readme = Nothing
-      , modules = []
+    let
+        modules =
+            case flags.docs of
+                Just docs ->
+                    Decode.decodeString (Decode.list Docs.decoder) docs
+                        |> Result.withDefault []
+
+                Nothing ->
+                    []
+    in
+    ( { readme = flags.readme
+      , modules = modules
       , key = key
       , page = Readme
       }
@@ -646,7 +662,7 @@ subscriptions model =
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.application
         { init = init
