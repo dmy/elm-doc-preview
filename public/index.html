@@ -32,7 +32,6 @@
             for (var i = 0; i < files.length; i++) {
                 if (files[i].kind === 'file') {
                     var file = files[i].getAsFile();
-                    console.log('... file[' + i + '].name = ' + file.name);
                     handleFile(file);
                 }
             }
