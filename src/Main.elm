@@ -54,13 +54,6 @@ type Page
     | Module String
 
 
-{-| Needed for github pages
--}
-pathroot : String
-pathroot =
-    ""
-
-
 
 -- INIT
 
@@ -98,9 +91,9 @@ init flags url key =
       , key = key
       , page = requestedPage
       }
-    , if url.path /= pathroot && requestedPage == Readme then
+    , if not (String.isEmpty url.path) && requestedPage == Readme then
         -- Remove not found module from URL
-        Nav.replaceUrl key pathroot
+        Nav.replaceUrl key "/"
 
       else
         Cmd.none
@@ -220,7 +213,7 @@ doc : List Docs.Module -> Docs.Module -> List (Html msg)
 doc modules module_ =
     let
         info =
-            Block.makeInfo pathroot module_.name modules
+            Block.makeInfo module_.name modules
     in
     h1 [ class "block-list-title" ]
         [ text module_.name ]
@@ -263,10 +256,10 @@ navLink currentPage targetPage =
             [ class "pkg-nav-module"
             , case targetPage of
                 Readme ->
-                    href pathroot
+                    href ""
 
                 Module name ->
-                    href (pathroot ++ "/" ++ String.replace "." "-" name)
+                    href ("/" ++ String.replace "." "-" name)
             , if currentPage == targetPage then
                 style "font-weight" "bold"
 

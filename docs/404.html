@@ -3,17 +3,7 @@
   <head>
     <meta charset="utf-8">
     <script type="text/javascript">
-      // Redirect to github pages root.
-      //
-      // This will redirect to index.html, allowing to refresh
-      // an SPA without getting a 404 error.
-      var segmentCount = 0;
-      var l = window.location;
- 	
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 2).join('/') + l.hash
-      );
+      window.location = "https://elm-doc-preview.netlify.com"
     </script>
   </head>
   <body>

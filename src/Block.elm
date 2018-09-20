@@ -174,8 +174,7 @@ unionMore info =
 
 
 type alias Info =
-    { pathroot : String
-    , moduleName : String
+    { moduleName : String
     , typeNameDict : TypeNameDict
     }
 
@@ -184,8 +183,8 @@ type alias TypeNameDict =
     Dict.Dict String ( String, String )
 
 
-makeInfo : String -> String -> List Docs.Module -> Info
-makeInfo pathroot moduleName docsList =
+makeInfo : String -> List Docs.Module -> Info
+makeInfo moduleName docsList =
     let
         addUnion home union docs =
             Dict.insert (home ++ "." ++ union.name) ( home, union.name ) docs
@@ -193,7 +192,7 @@ makeInfo pathroot moduleName docsList =
         addModule docs dict =
             List.foldl (addUnion docs.name) dict docs.unions
     in
-    Info pathroot moduleName (List.foldl addModule Dict.empty docsList)
+    Info moduleName (List.foldl addModule Dict.empty docsList)
 
 
 
@@ -211,10 +210,10 @@ bold =
 
 
 makeLink : Info -> List (Attribute msg) -> String -> String -> Html msg
-makeLink { pathroot, moduleName } attrs tagName humanName =
+makeLink { moduleName } attrs tagName humanName =
     let
         url =
-            pathroot ++ "/" ++ moduleName ++ "#" ++ tagName
+            "/" ++ moduleName ++ "#" ++ tagName
     in
     a (href url :: attrs) [ text humanName ]
 
