@@ -215,8 +215,6 @@ howto =
 # Elm Documentation Previewer
 
 Open a package `README.md`, `docs.json` (generated with `elm make --docs`) or both.
-
-To restart from scratch, just reload the page.
 """
 
 
