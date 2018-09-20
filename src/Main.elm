@@ -80,13 +80,28 @@ init flags url key =
 
                 Nothing ->
                     []
+
+        requestedModule =
+            urlToModule url
+
+        requestedPage =
+            if List.member requestedModule (List.map .name modules) then
+                Module requestedModule
+
+            else
+                Readme
     in
     ( { readme = flags.readme
       , modules = modules
       , key = key
-      , page = Readme
+      , page = requestedPage
       }
-    , Nav.replaceUrl key pathroot
+    , if url.path /= pathroot && requestedPage == Readme then
+        -- Remove not found module from URL
+        Nav.replaceUrl key pathroot
+
+      else
+        Cmd.none
     )
 
 
@@ -169,10 +184,14 @@ page model =
                             [ markdown howtoWithModules ]
 
             Module name ->
-                model.modules
-                    |> List.filter (\m -> m.name == name)
-                    |> List.map doc
-                    |> List.concat
+                case List.filter (\m -> m.name == name) model.modules of
+                    [ module_ ] ->
+                        doc module_
+
+                    _ ->
+                        [ h1 [] [ text "Error" ]
+                        , text "Module not found."
+                        ]
 
 
 howto : String
@@ -623,15 +642,12 @@ update msg model =
                     ( model, Cmd.none )
 
         UrlRequested request ->
-            let
-                _ =
-                    Debug.log "urlRequested" request
-            in
             case request of
                 Internal url ->
                     ( model
                     , case url.fragment of
                         Just _ ->
+                            -- scroll to anchor
                             Nav.load (Url.toString url)
 
                         Nothing ->
@@ -649,12 +665,7 @@ update msg model =
                     List.map .name model.modules
 
                 module_ =
-                    url.path
-                        |> String.split "/"
-                        |> List.reverse
-                        |> List.head
-                        |> Maybe.withDefault url.path
-                        |> String.replace "-" "."
+                    urlToModule url
             in
             case List.member module_ modules of
                 True ->
@@ -666,6 +677,16 @@ update msg model =
                     ( { model | page = Readme }
                     , Cmd.none
                     )
+
+
+urlToModule : Url -> String
+urlToModule url =
+    url.path
+        |> String.split "/"
+        |> List.reverse
+        |> List.head
+        |> Maybe.withDefault url.path
+        |> String.replace "-" "."
 
 
 subscriptions : Model -> Sub Msg
