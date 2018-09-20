@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Block
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Elm.Docs as Docs
@@ -12,6 +13,7 @@ import Markdown
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
 import Url exposing (Url)
+import Utils.Markdown as Markdown
 
 
 
@@ -174,19 +176,19 @@ page model =
             Readme ->
                 case model.readme of
                     Just readme ->
-                        [ markdown readme ]
+                        [ Markdown.block readme ]
 
                     Nothing ->
                         if List.isEmpty model.modules then
-                            [ markdown howto ]
+                            [ Markdown.block howto ]
 
                         else
-                            [ markdown howtoWithModules ]
+                            [ Markdown.block howtoWithModules ]
 
             Module name ->
                 case List.filter (\m -> m.name == name) model.modules of
                     [ module_ ] ->
-                        doc module_
+                        doc model.modules module_
 
                     _ ->
                         [ h1 [] [ text "Error" ]
@@ -214,320 +216,15 @@ Select a module and optionally add a `README.md` file.
 """
 
 
-doc : Docs.Module -> List (Html msg)
-doc docs =
+doc : List Docs.Module -> Docs.Module -> List (Html msg)
+doc modules module_ =
+    let
+        info =
+            Block.makeInfo pathroot module_.name modules
+    in
     h1 [ class "block-list-title" ]
-        [ text docs.name ]
-        :: List.map block (Docs.toBlocks docs)
-
-
-block : Docs.Block -> Html msg
-block b =
-    case b of
-        Docs.MarkdownBlock string ->
-            markdown string
-
-        Docs.UnionBlock union ->
-            unionBlock union
-
-        Docs.AliasBlock alias ->
-            aliasBlock alias
-
-        Docs.ValueBlock value ->
-            valueBlock value
-
-        Docs.BinopBlock binop ->
-            binopBlock binop
-
-        Docs.UnknownBlock string ->
-            div [] [ text string ]
-
-
-type ParameterizedTypeStyle
-    = WithParentheses
-    | WithoutParentheses
-
-
-unionBlock : Docs.Union -> Html msg
-unionBlock union =
-    div [ id union.name, class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ span [ class "hljs-keyword" ] [ text "type" ]
-            , text " "
-            , boldLink union.name
-            , text " "
-            , text (String.join " " union.args)
-            , tags union.tags
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown union.comment
-            ]
-        ]
-
-
-aliasBlock : Docs.Alias -> Html msg
-aliasBlock alias =
-    div [ id alias.name, class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ span [ class "hljs-keyword" ] [ text "type" ]
-            , text " "
-            , span [ class "hljs-keyword" ] [ text "alias" ]
-            , text " "
-            , boldLink alias.name
-            , text " "
-            , if List.length alias.args > 0 then
-                text (String.join " " alias.args ++ " = ")
-
-              else
-                text "="
-            , indent []
-                [ tipe WithoutParentheses alias.tipe
-                ]
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown alias.comment
-            ]
-        ]
-
-
-valueBlock : Docs.Value -> Html msg
-valueBlock value =
-    div [ id value.name, class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ boldLink value.name
-            , text " : "
-            , tipe WithoutParentheses value.tipe
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown value.comment
-            ]
-        ]
-
-
-link : String -> Html msg
-link ref =
-    a
-        [ href ("#" ++ ref)
-        ]
-        [ text ref ]
-
-
-boldLink : String -> Html msg
-boldLink ref =
-    a
-        [ href ("#" ++ ref)
-        , style "font-weight" "bold"
-        ]
-        [ text ref ]
-
-
-binopBlock : Docs.Binop -> Html msg
-binopBlock binop =
-    let
-        op =
-            "(" ++ binop.name ++ ")"
-    in
-    div [ id op, class "docs-block" ]
-        [ div [ class "docs-header" ]
-            [ boldLink op
-            , text " : "
-            , tipe WithoutParentheses binop.tipe
-            ]
-        , div [ class "docs-comment" ]
-            [ markdown binop.comment
-            ]
-        ]
-
-
-tags : List ( String, List Type.Type ) -> Html msg
-tags tags_ =
-    case tags_ of
-        [] ->
-            text ""
-
-        t :: ts ->
-            div []
-                (tag "=" t :: List.map (tag "|") ts)
-
-
-tag : String -> ( String, List Type.Type ) -> Html msg
-tag prefix ( name, types ) =
-    indent []
-        [ text (prefix ++ " ")
-        , span [ class "hljs-literal" ] [ text name ]
-        , text " "
-        , tipes WithParentheses " " types
-        ]
-
-
-indent : List (Html.Attribute msg) -> List (Html msg) -> Html msg
-indent attributes children =
-    div (style "margin-left" "2rem" :: attributes) children
-
-
-indentIf : Bool -> List (Html.Attribute msg) -> List (Html msg) -> Html msg
-indentIf cond attributes children =
-    if cond then
-        indent attributes children
-
-    else
-        span attributes children
-
-
-tipe : ParameterizedTypeStyle -> Type.Type -> Html msg
-tipe typeStyle t =
-    case t of
-        Type.Var string ->
-            var string
-
-        Type.Lambda t1 t2 ->
-            lambda t1 t2
-
-        Type.Tuple list ->
-            tuple list
-
-        Type.Type name types ->
-            typ typeStyle name types
-
-        Type.Record fields_ rowType ->
-            record fields_ rowType
-
-
-tipes : ParameterizedTypeStyle -> String -> List Type.Type -> Html msg
-tipes typeStyle separator types =
-    List.map (tipe typeStyle) types
-        |> List.intersperse (text separator)
-        |> span []
-
-
-var : String -> Html msg
-var string =
-    text string
-
-
-lambda : Type.Type -> Type.Type -> Html msg
-lambda t1 t2 =
-    span []
-        [ case t1 of
-            Type.Lambda _ _ ->
-                span []
-                    [ text "("
-                    , tipe WithoutParentheses t1
-                    , text ")"
-                    ]
-
-            _ ->
-                tipe WithoutParentheses t1
-        , text " -> "
-        , tipe WithoutParentheses t2
-        ]
-
-
-tuple : List Type.Type -> Html msg
-tuple types =
-    if List.isEmpty types then
-        text "()"
-
-    else
-        span []
-            [ text "( "
-            , tipes WithoutParentheses ", " types
-            , text " )"
-            ]
-
-
-typ : ParameterizedTypeStyle -> String -> List Type.Type -> Html msg
-typ typeStyle name types =
-    let
-        shortName =
-            name
-                |> String.split "."
-                |> List.reverse
-                |> List.head
-                |> Maybe.withDefault name
-    in
-    if List.isEmpty types then
-        span [ title name, class "hljs-type" ] [ text shortName ]
-
-    else if typeStyle == WithParentheses then
-        span []
-            [ text "("
-            , span [ title name, class "hljs-type" ] [ text shortName ]
-            , text " "
-            , tipes WithoutParentheses " " types
-            , text ")"
-            ]
-
-    else
-        span []
-            [ span [ title name, class "hljs-type" ] [ text shortName ]
-            , text " "
-            , tipes WithoutParentheses " " types
-            ]
-
-
-record : List ( String, Type.Type ) -> Maybe String -> Html msg
-record fields_ rowType =
-    case rowType of
-        Just r ->
-            indentIf (List.length fields_ > 1)
-                []
-                [ text "{ "
-                , text r
-                , indentIf (List.length fields_ > 1)
-                    []
-                    [ fields "|" fields_
-                    ]
-                , text "}"
-                ]
-
-        Nothing ->
-            indentIf (List.length fields_ > 1)
-                []
-                [ fields "{" fields_
-                , text "}"
-                ]
-
-
-fields : String -> List ( String, Type.Type ) -> Html msg
-fields prefix list =
-    case list of
-        f :: fs ->
-            span []
-                (field span prefix f
-                    :: List.map (field div ",") fs
-                )
-
-        [] ->
-            text prefix
-
-
-field :
-    (List (Html.Attribute msg) -> List (Html msg) -> Html msg)
-    -> String
-    -> ( String, Type.Type )
-    -> Html msg
-field element prefix ( fieldName, fieldType ) =
-    element []
-        [ text (prefix ++ " ")
-        , text fieldName
-        , text " : "
-        , tipe WithoutParentheses fieldType
-        ]
-
-
-markdownOptions : Markdown.Options
-markdownOptions =
-    { githubFlavored = Just { tables = False, breaks = False }
-    , defaultHighlighting = Just "elm"
-    , sanitize = True
-    , smartypants = True
-    }
-
-
-markdown : String -> Html msg
-markdown string =
-    Markdown.toHtmlWith markdownOptions [] string
+        [ text module_.name ]
+        :: List.map (Block.view info) (Docs.toBlocks module_)
 
 
 
