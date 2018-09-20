@@ -388,7 +388,7 @@ update msg model =
                 | readme = Just string
                 , page = Readme
               }
-            , Cmd.none
+            , Nav.replaceUrl model.key "/"
             )
 
         ModulesReceived value ->
@@ -398,7 +398,16 @@ update msg model =
                         | modules = modules
                         , page = Readme
                       }
-                    , Cmd.none
+                    , case model.page of
+                        Module module_ ->
+                            if List.member module_ (List.map .name modules) then
+                                Cmd.none
+
+                            else
+                                Nav.replaceUrl model.key "/"
+
+                        _ ->
+                            Cmd.none
                     )
 
                 Err err ->
