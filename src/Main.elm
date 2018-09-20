@@ -56,7 +56,7 @@ type Page
 -}
 pathroot : String
 pathroot =
-    "/elm-doc-preview"
+    ""
 
 
 
@@ -116,13 +116,13 @@ navigation model =
         , filesInput
         , case model.readme of
             Just _ ->
-                links model.page [ Readme ]
+                navLinks model.page [ Readme ]
 
             Nothing ->
                 text ""
         , model.modules
             |> List.map (\m -> Module m.name)
-            |> links model.page
+            |> navLinks model.page
         ]
 
 
@@ -231,11 +231,11 @@ type ParameterizedTypeStyle
 
 unionBlock : Docs.Union -> Html msg
 unionBlock union =
-    div [ class "docs-block" ]
+    div [ id union.name, class "docs-block" ]
         [ div [ class "docs-header" ]
             [ span [ class "hljs-keyword" ] [ text "type" ]
             , text " "
-            , span [ class "hljs-type" ] [ text union.name ]
+            , boldLink union.name
             , text " "
             , text (String.join " " union.args)
             , tags union.tags
@@ -248,13 +248,13 @@ unionBlock union =
 
 aliasBlock : Docs.Alias -> Html msg
 aliasBlock alias =
-    div [ class "docs-block" ]
+    div [ id alias.name, class "docs-block" ]
         [ div [ class "docs-header" ]
             [ span [ class "hljs-keyword" ] [ text "type" ]
             , text " "
             , span [ class "hljs-keyword" ] [ text "alias" ]
             , text " "
-            , span [ class "hljs-type" ] [ text alias.name ]
+            , boldLink alias.name
             , text " "
             , if List.length alias.args > 0 then
                 text (String.join " " alias.args ++ " = ")
@@ -273,14 +273,9 @@ aliasBlock alias =
 
 valueBlock : Docs.Value -> Html msg
 valueBlock value =
-    div [ class "docs-block" ]
+    div [ id value.name, class "docs-block" ]
         [ div [ class "docs-header" ]
-            [ span
-                [ class "hljs-title"
-                , style "font-weight" "bold"
-                ]
-                [ text value.name
-                ]
+            [ boldLink value.name
             , text " : "
             , tipe WithoutParentheses value.tipe
             ]
@@ -290,18 +285,32 @@ valueBlock value =
         ]
 
 
+link : String -> Html msg
+link ref =
+    a
+        [ href ("#" ++ ref)
+        ]
+        [ text ref ]
+
+
+boldLink : String -> Html msg
+boldLink ref =
+    a
+        [ href ("#" ++ ref)
+        , style "font-weight" "bold"
+        ]
+        [ text ref ]
+
+
 binopBlock : Docs.Binop -> Html msg
 binopBlock binop =
-    div [ class "docs-block" ]
+    let
+        op =
+            "(" ++ binop.name ++ ")"
+    in
+    div [ id op, class "docs-block" ]
         [ div [ class "docs-header" ]
-            [ span
-                [ class "hljs-title"
-                , style "font-weight" "bold"
-                ]
-                [ text "("
-                , text binop.name
-                , text ")"
-                ]
+            [ boldLink op
             , text " : "
             , tipe WithoutParentheses binop.tipe
             ]
@@ -525,14 +534,14 @@ filesInput =
         ]
 
 
-links : Page -> List Page -> Html msg
-links currentPage pages =
+navLinks : Page -> List Page -> Html msg
+navLinks currentPage pages =
     ul [ style "margin-top" "20px" ]
-        (List.map (link currentPage) pages)
+        (List.map (navLink currentPage) pages)
 
 
-link : Page -> Page -> Html msg
-link currentPage targetPage =
+navLink : Page -> Page -> Html msg
+navLink currentPage targetPage =
     li []
         [ a
             [ class "pkg-nav-module"
@@ -614,10 +623,19 @@ update msg model =
                     ( model, Cmd.none )
 
         UrlRequested request ->
+            let
+                _ =
+                    Debug.log "urlRequested" request
+            in
             case request of
                 Internal url ->
                     ( model
-                    , Nav.pushUrl model.key (Url.toString url)
+                    , case url.fragment of
+                        Just _ ->
+                            Nav.load (Url.toString url)
+
+                        Nothing ->
+                            Nav.pushUrl model.key (Url.toString url)
                     )
 
                 External url ->
