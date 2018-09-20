@@ -52,6 +52,13 @@ type Page
     | Module String
 
 
+{-| Needed for github pages
+-}
+pathroot : String
+pathroot =
+    "/elm-doc-preview"
+
+
 
 -- INIT
 
@@ -63,7 +70,7 @@ init flags url key =
       , key = key
       , page = Readme
       }
-    , Nav.replaceUrl key url.path
+    , Nav.replaceUrl key pathroot
     )
 
 
@@ -515,10 +522,10 @@ link currentPage targetPage =
             [ class "pkg-nav-module"
             , case targetPage of
                 Readme ->
-                    href ""
+                    href pathroot
 
                 Module name ->
-                    href ("#/" ++ name)
+                    href (pathroot ++ "/" ++ String.replace "." "-" name)
             , if currentPage == targetPage then
                 style "font-weight" "bold"
 
@@ -607,14 +614,17 @@ update msg model =
                 modules =
                     List.map .name model.modules
 
-                segment =
-                    url.fragment
-                        |> Maybe.map (String.dropLeft 1)
-                        |> Maybe.withDefault ""
+                module_ =
+                    url.path
+                        |> String.split "/"
+                        |> List.reverse
+                        |> List.head
+                        |> Maybe.withDefault url.path
+                        |> String.replace "-" "."
             in
-            case List.member segment modules of
+            case List.member module_ modules of
                 True ->
-                    ( { model | page = Module segment }
+                    ( { model | page = Module module_ }
                     , Cmd.none
                     )
 
