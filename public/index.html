@@ -28,10 +28,10 @@
             localStorage.clear();
         });
 
-        app.ports.filesDropped.subscribe(function (files) {
-            for (var i = 0; i < files.length; i++) {
-                if (files[i].kind === 'file') {
-                    var file = files[i].getAsFile();
+        app.ports.itemsDropped.subscribe(function (items) {
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].kind === 'file') {
+                    var file = items[i].getAsFile();
                     handleFile(file);
                 }
             }

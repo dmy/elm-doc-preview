@@ -20,7 +20,7 @@ import Utils.Markdown as Markdown
 -- PORTS
 
 
-port filesDropped : Decode.Value -> Cmd msg
+port itemsDropped : Decode.Value -> Cmd msg
 
 
 port filesSelected : Decode.Value -> Cmd msg
@@ -42,8 +42,8 @@ port modulesReceived : (Decode.Value -> msg) -> Sub msg
 type Msg
     = NoOp
     | Close
-    | FilesDropped Decode.Value
     | FilesSelected Decode.Value
+    | ItemsDropped Decode.Value
     | ModulesReceived Decode.Value
     | ReadmeReceived String
     | UrlRequested UrlRequest
@@ -124,7 +124,7 @@ view model =
             , style "flex-direction" "column"
             , preventDefaultOn "drop"
                 (Decode.at [ "dataTransfer", "items" ] Decode.value
-                    |> Decode.map (\items -> ( FilesDropped items, True ))
+                    |> Decode.map (\items -> ( ItemsDropped items, True ))
                 )
             , stopDragOver
             ]
@@ -373,14 +373,14 @@ update msg model =
             , clearStorage ()
             )
 
-        FilesDropped files ->
-            ( model
-            , filesDropped files
-            )
-
         FilesSelected files ->
             ( model
             , filesSelected files
+            )
+
+        ItemsDropped files ->
+            ( model
+            , itemsDropped files
             )
 
         ReadmeReceived string ->
