@@ -20,13 +20,13 @@ import Utils.Markdown as Markdown
 -- PORTS
 
 
-port itemsDropped : Decode.Value -> Cmd msg
+port clearStorage : () -> Cmd msg
 
 
 port filesSelected : Decode.Value -> Cmd msg
 
 
-port clearStorage : () -> Cmd msg
+port itemsDropped : Decode.Value -> Cmd msg
 
 
 port readmeReceived : (String -> msg) -> Sub msg
@@ -344,7 +344,7 @@ navLink currentPage targetPage =
 footer : Html msg
 footer =
     div [ class "footer" ]
-        [ text "All code for this site is "
+        [ text "The code for this site is "
         , a
             [ class "grey-link"
             , href "https://github.com/dmy/elm-doc-preview"
