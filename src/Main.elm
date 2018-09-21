@@ -394,20 +394,27 @@ update msg model =
         ModulesReceived value ->
             case Decode.decodeValue (Decode.list Docs.decoder) value of
                 Ok modules ->
+                    let
+                        modulesNames =
+                            List.map .name modules
+
+                        ( newPage, cmd ) =
+                            case model.page of
+                                Module module_ ->
+                                    if List.member module_ modulesNames then
+                                        ( Module module_, Cmd.none )
+
+                                    else
+                                        ( Readme, Nav.replaceUrl model.key "/" )
+
+                                _ ->
+                                    ( Readme, Cmd.none )
+                    in
                     ( { model
                         | modules = modules
-                        , page = Readme
+                        , page = newPage
                       }
-                    , case model.page of
-                        Module module_ ->
-                            if List.member module_ (List.map .name modules) then
-                                Cmd.none
-
-                            else
-                                Nav.replaceUrl model.key "/"
-
-                        _ ->
-                            Cmd.none
+                    , cmd
                     )
 
                 Err err ->
