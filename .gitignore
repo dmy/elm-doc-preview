@@ -1,3 +1,4 @@
 elm-stuff
-public/elm.js
 node_modules
+public/elm.js
+public/elm-doc-preview.css

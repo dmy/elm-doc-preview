@@ -2,6 +2,7 @@
   "name": "elm-doc-preview",
   "dependencies": {},
   "devDependencies": {
+    "csso-cli": "^1.1.0",
     "elm": "^0.19.0-bugfix2",
     "elm-minify": "^1.4.0"
   },
