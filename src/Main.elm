@@ -248,7 +248,10 @@ howto =
 
 Open a package `README.md`, `docs.json` (generated with `elm make --docs`) or both.
 
-Click "Open Files" on the side or drop files anywhere in the page.
+Click **Open Files** on the side or **drop files** anywhere in the page.
+
+
+*No data is sent to the server, so you can safely preview private packages documentation.*
 """
 
 
