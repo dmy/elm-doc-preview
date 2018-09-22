@@ -28,16 +28,16 @@
             localStorage.clear();
         });
 
-        app.ports.itemsDropped.subscribe(function (items) {
+        app.ports.readItems.subscribe(function (items) {
             for (var i = 0; i < items.length; i++) {
-                if (items[i].kind === 'file') {
+                if (items[i].kind === "file") {
                     var file = items[i].getAsFile();
                     handleFile(file);
                 }
             }
         });
 
-        app.ports.filesSelected.subscribe(function (files) {
+        app.ports.readFiles.subscribe(function (files) {
             for (var i = 0; i < files.length; i++) {
                 handleFile(files[i]);
             };
@@ -46,13 +46,13 @@
         function handleFile(file) {
             var reader = new FileReader();
 
-            if (file.name == "README.md") {
+            if (file.name === "README.md") {
                 reader.onload = (function(event) {
                     var content = event.target.result;
                     localStorage.setItem("readme", content);
                     app.ports.readmeReceived.send(content);
                 });
-            } else if (file.name == "docs.json") {
+            } else if (file.name === "docs.json") {
                 reader.onload = (function(event) {
                     var content = event.target.result;
                     localStorage.setItem("docs", content);

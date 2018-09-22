@@ -23,10 +23,10 @@ import Utils.Markdown as Markdown
 port clearStorage : () -> Cmd msg
 
 
-port filesSelected : Decode.Value -> Cmd msg
+port readFiles : Decode.Value -> Cmd msg
 
 
-port itemsDropped : Decode.Value -> Cmd msg
+port readItems : Decode.Value -> Cmd msg
 
 
 port readmeReceived : (String -> msg) -> Sub msg
@@ -375,12 +375,12 @@ update msg model =
 
         FilesSelected files ->
             ( model
-            , filesSelected files
+            , readFiles files
             )
 
         ItemsDropped files ->
             ( model
-            , itemsDropped files
+            , readItems files
             )
 
         ReadmeReceived string ->
