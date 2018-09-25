@@ -2,22 +2,27 @@ port module Main exposing (main)
 
 import Block
 import Browser exposing (UrlRequest(..))
+import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import Elm.Docs as Docs
 import Elm.Type as Type
 import Html exposing (Html, a, code, div, h1, input, label, li, span, text, ul)
-import Html.Attributes exposing (class, for, href, id, multiple, name, src, style, title, type_)
+import Html.Attributes exposing (attribute, class, for, href, id, multiple, name, src, style, tabindex, title, type_)
 import Html.Events exposing (on, onClick, preventDefaultOn)
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
+import Task
 import Url exposing (Url)
 import Utils.Markdown as Markdown
 
 
 
 -- PORTS
+
+
+port openFiles : () -> Cmd msg
 
 
 port clearStorage : () -> Cmd msg
@@ -41,6 +46,7 @@ port modulesReceived : (Decode.Value -> msg) -> Sub msg
 
 type Msg
     = NoOp
+    | OpenFiles
     | Close
     | FilesSelected Decode.Value
     | ItemsDropped Decode.Value
@@ -100,12 +106,15 @@ init flags url key =
       , key = key
       , page = requestedPage
       }
-    , if not (String.isEmpty url.path) && requestedPage == Readme then
-        -- Remove not found module from URL
-        Nav.replaceUrl key "/"
+    , Cmd.batch
+        [ if not (String.isEmpty url.path) && requestedPage == Readme then
+            -- Remove not found module from URL
+            Nav.replaceUrl key "/"
 
-      else
-        Cmd.none
+          else
+            Cmd.none
+        , Task.attempt (always NoOp) (Dom.focus "files-input-label")
+        ]
     )
 
 
@@ -286,7 +295,14 @@ filesInput =
             [ for "files-input"
             , class "files-input"
             ]
-            [ span [] [ text "Open Files" ]
+            [ span
+                [ id "files-input-label"
+                , attribute "role" "button"
+                , attribute "aria-controls" "filenames"
+                , tabindex 0
+                , onEnterOrSpace OpenFiles
+                ]
+                [ text "Open Files" ]
             ]
         , input
             [ id "files-input"
@@ -300,6 +316,21 @@ filesInput =
             ]
             []
         ]
+
+
+onEnterOrSpace : msg -> Html.Attribute msg
+onEnterOrSpace msg =
+    on "keyup"
+        (Decode.field "key" Decode.string
+            |> Decode.andThen
+                (\key ->
+                    if key == "Enter" || key == " " then
+                        Decode.succeed msg
+
+                    else
+                        Decode.fail ""
+                )
+        )
 
 
 navLinks : Page -> List Page -> Html msg
@@ -366,6 +397,9 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
+
+        OpenFiles ->
+            ( model, openFiles () )
 
         Close ->
             ( { model
