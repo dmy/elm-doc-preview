@@ -113,7 +113,11 @@ init flags url key =
 
           else
             Cmd.none
-        , Task.attempt (always NoOp) (Dom.focus "files-input-label")
+        , if url.fragment == Nothing then
+            Task.attempt (always NoOp) (Dom.focus "files-input-label")
+
+          else
+            Cmd.none
         ]
     )
 
