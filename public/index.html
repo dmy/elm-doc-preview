@@ -15,58 +15,38 @@
     <div id="elm"></div>
     <script type="text/javascript">
         var app = Elm.Main.init({
-            node: document.getElementById('elm'),
+            node: document.getElementById("elm"),
             flags: {
                 readme: localStorage.getItem("readme"),
                 docs: localStorage.getItem("docs")
             }
-        });
 
-        app.ports.openFiles.subscribe(function () {
-            var input = document.getElementById("files-input");
-            if (input) {
-                input.click();
-            }
         });
 
         app.ports.clearStorage.subscribe(function () {
             localStorage.clear();
         });
 
-        app.ports.readItems.subscribe(function (items) {
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].kind === "file") {
-                    var file = items[i].getAsFile();
-                    handleFile(file);
-                }
-            }
+        app.ports.storeReadme.subscribe(function (readme) {
+            localStorage.setItem("readme", readme);
         });
 
-        app.ports.readFiles.subscribe(function (files) {
-            for (var i = 0; i < files.length; i++) {
-                handleFile(files[i]);
-            };
+        app.ports.storeDocs.subscribe(function (docs) {
+            localStorage.setItem("docs", docs);
         });
 
-        function handleFile(file) {
-            var reader = new FileReader();
-
-            if (file.name === "README.md") {
-                reader.onload = (function(event) {
-                    var content = event.target.result;
-                    localStorage.setItem("readme", content);
-                    app.ports.readmeReceived.send(content);
-                });
-            } else if (file.name === "docs.json") {
-                reader.onload = (function(event) {
-                    var content = event.target.result;
-                    localStorage.setItem("docs", content);
-                    modules = JSON.parse(content);
-                    app.ports.modulesReceived.send(modules);
-                });
+        document.addEventListener("click", function (e) {
+            e.preventDefault();
+            var target = e.target;
+            // Go up to anchor to get href
+            while (target && !(target instanceof HTMLAnchorElement)) {
+                target = target.parentNode;
             }
-            reader.readAsText(file);
-        }
+            if (target instanceof HTMLAnchorElement) {
+                var href = target.getAttribute("href");
+                app.ports.locationHrefRequested.send(href);
+            }
+        });
     </script>
   </body>
 </html>

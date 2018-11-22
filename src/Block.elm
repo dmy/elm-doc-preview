@@ -176,6 +176,7 @@ unionMore info =
 type alias Info =
     { moduleName : String
     , typeNameDict : TypeNameDict
+    , query : String
     }
 
 
@@ -183,8 +184,8 @@ type alias TypeNameDict =
     Dict.Dict String ( String, String )
 
 
-makeInfo : String -> List Docs.Module -> Info
-makeInfo moduleName docsList =
+makeInfo : String -> List Docs.Module -> String -> Info
+makeInfo moduleName docsList query =
     let
         addUnion home union docs =
             Dict.insert (home ++ "." ++ union.name) ( home, union.name ) docs
@@ -192,7 +193,7 @@ makeInfo moduleName docsList =
         addModule docs dict =
             List.foldl (addUnion docs.name) dict docs.unions
     in
-    Info moduleName (List.foldl addModule Dict.empty docsList)
+    Info moduleName (List.foldl addModule Dict.empty docsList) query
 
 
 
@@ -210,10 +211,10 @@ bold =
 
 
 makeLink : Info -> List (Attribute msg) -> String -> String -> Html msg
-makeLink { moduleName } attrs tagName humanName =
+makeLink { moduleName, query } attrs tagName humanName =
     let
         url =
-            "/" ++ moduleName ++ "#" ++ tagName
+            "/" ++ moduleName ++ query ++ "#" ++ tagName
     in
     a (href url :: attrs) [ text humanName ]
 
