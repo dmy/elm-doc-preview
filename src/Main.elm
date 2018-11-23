@@ -636,10 +636,15 @@ update msg model =
             ( setModules [] model, Cmd.none )
 
         ReadmeLoaded readme ->
-            ( setReadme (Just readme) model, storeReadme readme )
+            ( setReadme (Just readme) model
+            , Cmd.batch
+                [ jumpToFragment model.url
+                , storeReadme readme
+                ]
+            )
 
         ReadmeRequestCompleted (Ok readme) ->
-            ( setReadme (Just readme) model, Cmd.none )
+            ( setReadme (Just readme) model, jumpToFragment model.url )
 
         ReadmeRequestCompleted (Err error) ->
             ( setReadme Nothing model, Cmd.none )
