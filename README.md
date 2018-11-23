@@ -8,6 +8,8 @@ https://elm-doc-preview.netlify.com
 
 # Credits
 
-**elm-doc-preview** is mostly a repackaging of the official documentation viewer from [package.elm-lang.org](https://github.com/elm/package.elm-lang.org).
-
-So most credits go to [its author](https://github.com/evancz).
+* Documentation rendering from [package.elm-lang.org](https://github.com/elm/package.elm-lang.org) by Evan Czaplicki.
+* Markdown rendering from [Marked.js](https://github.com/markedjs/marked) by Christopher Jeffrey.
+* Code highlighting from [highlight.js](https://github.com/highlightjs/highlight.js) by Ivan Sagalaev.
+* Code highlighting theme from [Solarized](ethanschoonover.com/solarized) by Jeremy Hull.
+* CSS spinner from [SpinKit](https://github.com/tobiasahlin/SpinKit) by Tobias Ahlin.

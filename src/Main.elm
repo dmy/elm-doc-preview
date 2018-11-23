@@ -365,6 +365,14 @@ No data is sent to the server, so you can safely preview private packages docume
 Local documentation is stored in the browser local storage to improve navigation.
 Closing the preview clears it.
 
+## Credits
+
+* Documentation rendering from [package.elm-lang.org](https://github.com/elm/package.elm-lang.org) by Evan Czaplicki.
+* Markdown rendering from [Marked.js](https://github.com/markedjs/marked) by Christopher Jeffrey.
+* Code highlighting from [highlight.js](https://github.com/highlightjs/highlight.js) by Ivan Sagalaev.
+* Code highlighting theme from [Solarized](ethanschoonover.com/solarized) by Jeremy Hull.
+* CSS spinner from [SpinKit](https://github.com/tobiasahlin/SpinKit) by Tobias Ahlin.
+
 ## Feedback
 
 Report bugs or feature requests at https://github.com/dmy/elm-doc-preview/issues.
@@ -558,8 +566,9 @@ footer =
             [ class "grey-link"
             , href "https://github.com/dmy/elm-doc-preview"
             ]
-            [ text "open source" ]
-        , text " and written in Elm."
+            [ text "open source." ]
+        , text " "
+        , text "Copyright © 2018 Rémi Lefèvre."
         ]
 
 
