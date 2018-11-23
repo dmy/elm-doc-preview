@@ -338,7 +338,7 @@ Open a package `README.md`, `docs.json` (from `elm make --docs=docs.json`) or bo
 
 ## Sharing documentation
 
-To share some unpublished package documentation (for example for review), commit `README.md` and/or `docs.json` to a github repository branch and add the following query parameters:
+To share some unpublished package documentation (for example for review), commit `README.md` and/or `docs.json` to a github repository branch and use the following query parameters:
 
 **`repo`**
 > The github repository, for example `dmy/elm-doc-example`.
@@ -346,16 +346,17 @@ To share some unpublished package documentation (for example for review), commit
 **`version`** (optional, `master` by default)
 > The branch, tag or commit hash.
 
-Paths to modules and symbols fragments are supported, so links from the documentation can be copied and shared.
-
-Files not found or invalid will be ignored.
-
-Examples: 
+Examples with https://github.com/dmy/elm-doc-example:
 * https://elm-doc-preview.netlify.com?repo=dmy/elm-doc-example
 * https://elm-doc-preview.netlify.com?repo=dmy/elm-doc-example&version=master
 * https://elm-doc-preview.netlify.com?repo=dmy/elm-doc-example&version=ba1054
 * https://elm-doc-preview.netlify.com/ModuleA?repo=dmy/elm-doc-example
 * https://elm-doc-preview.netlify.com/ModuleB?repo=dmy/elm-doc-example#TypeB
+
+Notes:
+* Paths to modules and symbols fragments are supported, so links from the documentation can be copied and shared.
+* Files not found or invalid will be ignored.
+
 
 ## Privacy
 
@@ -366,7 +367,7 @@ Closing the preview clears it.
 
 ## Feedback
 
-Report bugs or feature requests to https://github.com/dmy/elm-doc-preview/issues.
+Report bugs or feature requests at https://github.com/dmy/elm-doc-preview/issues.
 """
 
 
