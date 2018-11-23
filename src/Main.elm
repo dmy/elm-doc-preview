@@ -579,7 +579,8 @@ footer =
 selectFiles : Cmd Msg
 selectFiles =
     Select.files
-        [ "text/plain", "text/markdown", "application/json" ]
+        -- Browsers do not agree on mime types :/
+        [ "text/plain", "text/markdown", "application/json", ".md" ]
         GotFiles
 
 
