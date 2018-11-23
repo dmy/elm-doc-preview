@@ -36,6 +36,10 @@
         });
 
         document.addEventListener("click", function (e) {
+            if (e.button !== 0) {
+                return true;
+            }
+
             e.preventDefault();
             var target = e.target;
             // Go up to anchor to get href
