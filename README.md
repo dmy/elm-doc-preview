@@ -9,7 +9,7 @@ There is an online version supporting documentation loading from github that can
 https://elm-doc-preview.netlify.com
 
 ## Local version
-There is also a local version that supports **live reloading** for convenient packages documentation editing:
+There is also a local version that supports **hot reloading** for convenient packages documentation editing:
 
 ```sh
 $ npm install -g elm-doc-preview

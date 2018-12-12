@@ -27,7 +27,7 @@
     "url": "git+https://github.com/dmy/elm-doc-preview.git"
   },
   "license": "SEE LICENSE in LICENSE.md",
-  "description": "Elm packages documentation previewer with live reloading.",
+  "description": "Elm packages documentation previewer with hot reloading.",
   "bugs": {
     "url": "https://github.com/dmy/elm-doc-preview/issues"
   },
