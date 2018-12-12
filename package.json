@@ -1,14 +1,54 @@
 {
   "name": "elm-doc-preview",
-  "dependencies": {},
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "commander": "^2.19.0",
+    "cross-spawn": "^6.0.5",
+    "express": "^4.16.4",
+    "express-ws": "^4.0.0",
+    "sane": "^4.0.2",
+    "serve-static": "^1.13.2",
+    "tmp": "0.0.33"
+  },
   "devDependencies": {
     "csso-cli": "^1.1.0",
     "elm": "^0.19.0-bugfix2",
-    "elm-minify": "^1.4.0"
+    "elm-minify": "^1.4.0",
+    "eslint": "^5.10.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-config-prettier": "^3.3.0",
+    "npx": "^10.2.0"
+  },
+  "engines": {
+    "node": ">=6.0.0"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dmy/elm-doc-preview.git"
   },
-  "license": "BSD-3-Clause"
+  "license": "SEE LICENSE in LICENSE.md",
+  "description": "Elm packages documentation previewer with live reloading.",
+  "bugs": {
+    "url": "https://github.com/dmy/elm-doc-preview/issues"
+  },
+  "homepage": "https://github.com/dmy/elm-doc-preview#readme",
+  "version": "1.0.2",
+  "bin": {
+    "elm-doc-preview": "./cli.js"
+  },
+  "main": "./cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "make"
+  },
+  "keywords": [
+    "elm",
+    "package",
+    "doc",
+    "docs",
+    "documentation",
+    "preview",
+    "previewer"
+  ],
+  "author": "Rémi Lefèvre <rlefevre@gmail.com>"
 }

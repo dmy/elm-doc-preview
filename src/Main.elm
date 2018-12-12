@@ -5,7 +5,9 @@ import Browser exposing (UrlRequest(..))
 import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import Elm.Docs as Docs
+import Elm.Error as Error
 import Elm.Type as Type
+import Errors exposing (viewError)
 import File exposing (File)
 import File.Select as Select
 import Html exposing (Html, a, div, h1, li, span, text, ul)
@@ -39,6 +41,15 @@ import Utils.Markdown as Markdown
 port locationHrefRequested : (String -> msg) -> Sub msg
 
 
+port compilationCompleted : (String -> msg) -> Sub msg
+
+
+port readmeUpdated : (String -> msg) -> Sub msg
+
+
+port docsUpdated : (String -> msg) -> Sub msg
+
+
 port storeReadme : String -> Cmd msg
 
 
@@ -54,6 +65,7 @@ port clearStorage : () -> Cmd msg
 
 type Msg
     = Ignored String
+    | CompilationCompleted String
     | OpenFilesClicked
     | GotFiles File (List File)
     | ClosePreviewClicked
@@ -73,6 +85,8 @@ type alias Model =
     , url : Url
     , page : Page
     , source : Source
+    , online : Bool
+    , error : Maybe Error.Error
     }
 
 
@@ -102,6 +116,7 @@ type alias Repo =
 type alias Flags =
     { readme : Maybe String
     , docs : Maybe String
+    , online : Bool
     }
 
 
@@ -124,6 +139,8 @@ init flags url navKey =
       , url = url
       , page = urlToPage url
       , source = source
+      , online = flags.online
+      , error = Nothing
       }
     , Cmd.batch
         [ focusOpenFilesLink
@@ -241,21 +258,30 @@ view model =
             , preventDefaultOn "drop"
                 (Decode.map alwaysPreventDefault dropDecoder)
             ]
-            [ div
-                [ class "center"
-                , style "flex" "1"
-                ]
-                [ if isLoading model.source then
-                    spinner
-
-                  else
-                    page model
-                , navigation model
-                ]
+            [ viewMain model
             , footer
             ]
         ]
     }
+
+
+viewMain : Model -> Html Msg
+viewMain model =
+    div
+        [ class "center"
+        , style "flex" "1"
+        ]
+        [ case ( model.error, isLoading model.source ) of
+            ( Just error, _ ) ->
+                compilationError error
+
+            ( Nothing, True ) ->
+                spinner
+
+            _ ->
+                page model
+        , navigation model
+        ]
 
 
 dropDecoder : Decoder Msg
@@ -326,6 +352,15 @@ spinner =
         ]
 
 
+compilationError : Error.Error -> Html msg
+compilationError error =
+    div
+        [ class "block-list"
+        , style "margin-top" "24px"
+        ]
+        [ viewError error ]
+
+
 howto : String
 howto =
     """
@@ -357,13 +392,15 @@ Notes:
 * Paths to modules and symbols fragments are supported, so links from the documentation can be copied and shared.
 * Files not found or invalid will be ignored.
 
-
 ## Privacy
 
 No data is sent to the server, so you can safely preview private packages documentation.
 
 Local documentation is stored in the browser local storage to improve navigation.
 Closing the preview clears it.
+
+## Local version with live reloading
+When editing a package documentation, it is more convenient to see updates in real-time. For this you can use the local version that supports live reloading, see https://www.npmjs.com/package/elm-doc-preview.
 
 ## Credits
 
@@ -408,18 +445,25 @@ navigation model =
         [ class "pkg-nav"
         ]
         [ logo
-        , openLink model.source
-        , closeLink model
-        , case model.readme of
-            Just _ ->
-                navLinks model.source model.page [ Readme ]
-
-            Nothing ->
-                text ""
+        , viewIf (model.online == True) <|
+            openLink model.source
+        , viewIf (model.online == True) <|
+            closeLink model
+        , viewIf (model.readme /= Nothing) <|
+            navLinks model.source model.page [ Readme ]
         , model.modules
             |> List.map (\m -> Module m.name)
             |> navLinks model.source model.page
         ]
+
+
+viewIf : Bool -> Html msg -> Html msg
+viewIf cond viewer =
+    if cond then
+        viewer
+
+    else
+        text ""
 
 
 logo : Html msg
@@ -561,7 +605,7 @@ unslugify str =
 footer : Html msg
 footer =
     div [ class "footer" ]
-        [ text "The code for this site is "
+        [ text "elm-doc-preview is "
         , a
             [ class "grey-link"
             , href "https://github.com/dmy/elm-doc-preview"
@@ -621,6 +665,9 @@ update msg model =
     case msg of
         Ignored _ ->
             ( model, Cmd.none )
+
+        CompilationCompleted error ->
+            ( setError error model, Cmd.none )
 
         OpenFilesClicked ->
             ( model, selectFiles )
@@ -692,6 +739,16 @@ addUrlQuery model url =
                     { url | query = Just (String.dropLeft 1 query) }
 
 
+setError : String -> Model -> Model
+setError errorJsonString model =
+    case Decode.decodeString Error.decoder errorJsonString of
+        Ok error ->
+            { model | error = Just error }
+
+        Err _ ->
+            { model | error = Nothing }
+
+
 setReadme : Maybe String -> Model -> Model
 setReadme readme model =
     { model
@@ -745,6 +802,7 @@ closePreview model =
         , modules = []
         , page = Readme
         , source = Local
+        , error = Nothing
     }
 
 
@@ -778,7 +836,12 @@ urlToPage url =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    locationHrefRequested LocationHrefRequested
+    Sub.batch
+        [ locationHrefRequested LocationHrefRequested
+        , compilationCompleted CompilationCompleted
+        , readmeUpdated ReadmeLoaded
+        , docsUpdated DocsLoaded
+        ]
 
 
 

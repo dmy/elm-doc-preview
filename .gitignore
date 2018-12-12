@@ -2,3 +2,7 @@ elm-stuff
 node_modules
 public/elm.js
 public/elm-doc-preview.css
+*.swp
+*.swo
+*~
+*.tgz
