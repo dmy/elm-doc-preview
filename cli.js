@@ -58,6 +58,30 @@ process.on("SIGINT", () => {
 });
 
 /*
+ * Check package
+ */
+const elmJsonPath = path.join(process.cwd(), "elm.json");
+let elmJson = {};
+try {
+  elmJson = JSON.parse(fs.readFileSync(elmJsonPath, "utf8"));
+} catch (e) {
+  error(`invalid elm.json file (${e})`);
+  process.exit(1);
+}
+
+if (!("type" in elmJson) || elmJson.type !== "package") {
+  const type = "type" in elmJson ? elmJson.type : "program";
+  error(
+    `unsupported Elm ${type}, only packages documentation can be previewed`
+  );
+  process.exit(1);
+}
+let pkgName = "name" in elmJson ? elmJson.name : "package";
+if ("version" in elmJson) {
+  pkgName += ` ${elmJson.version}`;
+}
+
+/*
  * Find and check Elm
  */
 let elm = args => {
@@ -103,7 +127,7 @@ console.log(
   chalk`{bold elm-doc-preview ${pkg.version}} using elm ${elmVersion}`
 );
 
-console.log(`Previewing ${process.cwd()}`);
+console.log(chalk`Previewing {magenta ${pkgName}} from ${process.cwd()}`);
 
 /*
  * Set web server
