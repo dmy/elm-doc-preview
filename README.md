@@ -4,12 +4,12 @@ This is a documentation previewer for Elm packages (>= 0.19),
 It allows previewing `README.md` and `docs.json` files (generated with `elm make --docs=docs.json`).
 
 ## Online version
-There is an online version supporting documentation **loading from github and links** that can be used **for reviews**:
+There is an online version supporting documentation loading from github that can be used for reviews:
 
 https://elm-doc-preview.netlify.com
 
 ## Local version
-There is also a local version that supports **live reloading for convenient packages documentation editing**:
+There is also a local version that supports **live reloading** for convenient packages documentation editing:
 
 ```sh
 $ npm install -g elm-doc-preview
