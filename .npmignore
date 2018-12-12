@@ -11,6 +11,8 @@ public/spinner.css
 public/_redirects
 public/index.html
 public/online.js
+public/robots.txt
+public/sitemap.txt
 .eslintrc
 *.swp
 *.swo
