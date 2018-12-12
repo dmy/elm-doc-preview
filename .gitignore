@@ -6,3 +6,4 @@ public/elm-doc-preview.css
 *.swo
 *~
 *.tgz
+npm-debug.log
