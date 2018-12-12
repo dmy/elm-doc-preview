@@ -53,9 +53,13 @@ pre {
 
 /* HEADER */
 
+@media (min-width: 920px) {
+  .center {
+    width: 920px;
+  }
+}
 
 .center {
-  width: 920px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -126,9 +130,13 @@ pre {
 
 /* DOCUMENTATION */
 
+@media (min-width: 920px) {
+ .block-list {
+    width: 600px;
+  }
+}
 
 .block-list {
-  width: 600px;
   display: inline-block;
   vertical-align: top;
 }
@@ -169,14 +177,20 @@ pre {
 
 /* PACKAGE NAVIGATION */
 
+@media (min-width: 920px) {
+  .pkg-nav {
+    margin: 8px 0 20px 40px;
+    border-left: 1px solid #eeeeee;
+    padding: 0 0 20px 20px;
+  }
+}
 
 .pkg-nav {
   width: 240px;
   display: inline-block;
   vertical-align: top;
-  padding: 0 0 20px 20px;
-  margin: 8px 0 20px 40px;
-  border-left: 1px solid #eeeeee;
+  padding: 0 0 0px 20px;
+  margin: 8px 0 20px 0px;
 }
 
 .pkg-nav h2 {

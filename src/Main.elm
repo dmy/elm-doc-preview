@@ -270,6 +270,8 @@ viewMain model =
     div
         [ class "center"
         , style "flex" "1"
+        , style "flex-wrap" "wrap-reverse"
+        , style "display" "flex"
         ]
         [ case ( model.error, isLoading model.source ) of
             ( Just error, _ ) ->
