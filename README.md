@@ -3,7 +3,7 @@
 This is a documentation previewer for Elm packages (>= 0.19).
 It allows previewing `README.md` and `docs.json` files (generated with `elm make --docs=docs.json`).
 
-It aims at rendering exactly like the [official package website](package.elm-lang.org).
+It aims at rendering documentation exactly like the [official package website](https://package.elm-lang.org).
 
 ## Online version
 There is an online version supporting documentation loading from github that can be used for reviews:
