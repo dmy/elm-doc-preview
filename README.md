@@ -1,7 +1,9 @@
 # elm-doc-preview
 
-This is a documentation previewer for Elm packages (>= 0.19),
+This is a documentation previewer for Elm packages (>= 0.19).
 It allows previewing `README.md` and `docs.json` files (generated with `elm make --docs=docs.json`).
+
+It aims at rendering exactly like the [official package website](package.elm-lang.org).
 
 ## Online version
 There is an online version supporting documentation loading from github that can be used for reviews:
@@ -21,6 +23,11 @@ $ elm-doc-preview
 or from anywhere:
 ```sh
 $ elm-doc-preview path/to/package
+```
+
+As a side effect, this also allows to view installed packages documentation offline from the local cache:
+```
+$ elm-doc-preview ~/.elm/0.19.0/package/elm/html/1.0.0/
 ```
 
 # Credits
