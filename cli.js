@@ -122,7 +122,6 @@ function buildDoc() {
 console.log(
   chalk`{bold elm-doc-preview ${pkg.version}} using elm ${elmVersion}`
 );
-
 console.log(chalk`Previewing {magenta ${pkgName}} from ${process.cwd()}`);
 
 /*
@@ -172,6 +171,9 @@ app.get("*", (req, res) => {
 
 let timeout = null;
 function onChange(filepath) {
+  /* Try to batch consecutive updates.
+   * (for example the way vim saves files would lead to 3 rebuilds else)
+   */
   if (timeout) {
     clearTimeout(timeout);
   }
