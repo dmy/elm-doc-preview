@@ -84,14 +84,11 @@ if ("version" in elmJson) {
 /*
  * Find and check Elm
  */
-let elm = args => {
-  return spawn.sync("npx", ["--no-install", "elm"].concat(args));
-};
+let elm = args => spawn.sync("npx", ["--no-install", "elm"].concat(args));
+
 let exec = elm(["--version"]);
-if (exec.error) {
-  elm = args => {
-    return spawn.sync("elm", args);
-  };
+if (exec.error || exec.status !== 0 || exec.stderr.toString().length > 0) {
+  elm = args => spawn.sync("elm", args);
   exec = elm(["--version"]);
 }
 
