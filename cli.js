@@ -60,10 +60,9 @@ process.on("SIGINT", () => {
 /*
  * Check package
  */
-const elmJsonPath = path.join(process.cwd(), "elm.json");
 let elmJson = {};
 try {
-  elmJson = JSON.parse(fs.readFileSync(elmJsonPath, "utf8"));
+  elmJson = JSON.parse(fs.readFileSync("elm.json", "utf8"));
 } catch (e) {
   error(`invalid elm.json file (${e})`);
   process.exit(1);
