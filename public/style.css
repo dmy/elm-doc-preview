@@ -53,15 +53,15 @@ pre {
 
 /* HEADER */
 
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 @media (min-width: 920px) {
   .center {
     width: 920px;
   }
-}
-
-.center {
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .header {
@@ -130,15 +130,15 @@ pre {
 
 /* DOCUMENTATION */
 
+.block-list {
+  display: inline-block;
+  vertical-align: top;
+}
+
 @media (min-width: 920px) {
  .block-list {
     width: 600px;
   }
-}
-
-.block-list {
-  display: inline-block;
-  vertical-align: top;
 }
 
 .block-list-title {
@@ -177,20 +177,20 @@ pre {
 
 /* PACKAGE NAVIGATION */
 
-@media (min-width: 920px) {
-  .pkg-nav {
-    margin: 8px 0 20px 40px;
-    border-left: 1px solid #eeeeee;
-    padding: 0 0 20px 20px;
-  }
-}
-
 .pkg-nav {
   width: 240px;
   display: inline-block;
   vertical-align: top;
   padding: 0 0 0px 20px;
   margin: 8px 0 20px 0px;
+}
+
+@media (min-width: 920px) {
+  .pkg-nav {
+    margin: 8px 0 20px 40px;
+    border-left: 1px solid #eeeeee;
+    padding: 0 0 20px 20px;
+  }
 }
 
 .pkg-nav h2 {
