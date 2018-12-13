@@ -32,7 +32,7 @@
     "url": "https://github.com/dmy/elm-doc-preview/issues"
   },
   "homepage": "https://github.com/dmy/elm-doc-preview#readme",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "bin": {
     "elm-doc-preview": "./cli.js"
   },
