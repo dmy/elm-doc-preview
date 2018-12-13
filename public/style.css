@@ -116,6 +116,10 @@ pre {
   color: #bbbbbb;
 }
 
+.footer span {
+  white-space: nowrap;
+}
+
 
 .grey-link {
   color: #bbbbbb;
@@ -133,11 +137,13 @@ pre {
 .block-list {
   display: inline-block;
   vertical-align: top;
+  margin: 0 20px;
 }
 
 @media (min-width: 920px) {
  .block-list {
     width: 600px;
+    margin: 0;
   }
 }
 
