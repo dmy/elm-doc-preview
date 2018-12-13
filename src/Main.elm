@@ -273,7 +273,7 @@ viewMain model =
         , style "flex-wrap" "wrap-reverse"
         , style "display" "flex"
         ]
-        [ case ( model.error, isLoading model.source ) of
+        [ case ( model.error, isLoading model ) of
             ( Just error, _ ) ->
                 compilationError error
 
@@ -303,20 +303,25 @@ alwaysPreventDefault msg =
     ( msg, True )
 
 
-isLoading : Source -> Bool
-isLoading source =
-    case source of
-        Remote Loading _ ->
-            True
+isLoading : Model -> Bool
+isLoading model =
+    -- Offline, waiting for websocket update
+    if not model.online && model.readme == Nothing then
+        True
 
-        Remote LoadingReadme _ ->
-            True
+    else
+        case model.source of
+            Remote Loading _ ->
+                True
 
-        Remote LoadingDocs _ ->
-            True
+            Remote LoadingReadme _ ->
+                True
 
-        _ ->
-            False
+            Remote LoadingDocs _ ->
+                True
+
+            _ ->
+                False
 
 
 page : Model -> Html Msg
@@ -447,9 +452,9 @@ navigation model =
         [ class "pkg-nav"
         ]
         [ logo
-        , viewIf (model.online == True) <|
-            openLink model.source
-        , viewIf (model.online == True) <|
+        , viewIf (model.online && not (isLoading model)) <|
+            openLink
+        , viewIf model.online <|
             closeLink model
         , viewIf (model.readme /= Nothing) <|
             navLinks model.source model.page [ Readme ]
@@ -496,22 +501,18 @@ logo =
         ]
 
 
-openLink : Source -> Html Msg
-openLink source =
-    if isLoading source then
-        text ""
-
-    else
-        div []
-            [ a
-                [ id "open-link"
-                , style "cursor" "pointer"
-                , href ""
-                , onEnterOrSpace OpenFilesClicked
-                , onClick OpenFilesClicked
-                ]
-                [ text "Open Files" ]
+openLink : Html Msg
+openLink =
+    div []
+        [ a
+            [ id "open-link"
+            , style "cursor" "pointer"
+            , href ""
+            , onEnterOrSpace OpenFilesClicked
+            , onClick OpenFilesClicked
             ]
+            [ text "Open Files" ]
+        ]
 
 
 closeLink : Model -> Html Msg
