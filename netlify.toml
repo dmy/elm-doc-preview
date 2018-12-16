@@ -1,0 +1,10 @@
+[[redirects]]
+  from =  "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+[[headers]]
+  for = "/:module*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
