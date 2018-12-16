@@ -272,6 +272,7 @@ viewMain model =
         , style "flex" "1"
         , style "flex-wrap" "wrap-reverse"
         , style "display" "flex"
+        , style "align-items" "flex-end"
         ]
         [ case ( model.error, isLoading model ) of
             ( Just error, _ ) ->
