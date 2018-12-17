@@ -415,7 +415,7 @@ When editing a package documentation, it is more convenient to see updates in re
 * Documentation rendering from [package.elm-lang.org](https://github.com/elm/package.elm-lang.org) by Evan Czaplicki.
 * Markdown rendering from [Marked.js](https://github.com/markedjs/marked) by Christopher Jeffrey.
 * Code highlighting from [highlight.js](https://github.com/highlightjs/highlight.js) by Ivan Sagalaev.
-* Code highlighting theme from [Solarized](ethanschoonover.com/solarized) by Jeremy Hull.
+* Code highlighting theme from [Solarized](https://ethanschoonover.com/solarized) by Jeremy Hull.
 * CSS spinner from [SpinKit](https://github.com/tobiasahlin/SpinKit) by Tobias Ahlin.
 
 ## Feedback
