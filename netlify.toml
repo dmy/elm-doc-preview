@@ -1,3 +1,7 @@
+[build]
+  publish = "public"
+  command = "make"
+
 [[redirects]]
   from = "/"
   to = "/noindex.html"
