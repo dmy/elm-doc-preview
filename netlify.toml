@@ -1,10 +1,12 @@
 [[redirects]]
-  from =  "/*"
-  to = "/index.html"
+  from = "/"
+  to = "/noindex.html"
+  query = {repo = ":repo"}
   status = 200
   force = false
 
-[[headers]]
-  for = "/:module*"
-  [headers.values]
-    X-Robots-Tag = "noindex"
+[[redirects]]
+  from = "/:module"
+  to = "/noindex.html"
+  status = 200
+  force = false
