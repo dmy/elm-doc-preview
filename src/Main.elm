@@ -459,6 +459,7 @@ navigation model =
             closeLink model
         , viewIf (model.readme /= Nothing) <|
             navLinks model.source model.page [ Readme ]
+        , browseSourceLink model.source
         , model.modules
             |> List.map (\m -> Module m.name)
             |> navLinks model.source model.page
@@ -531,6 +532,33 @@ closeLink model =
                 ]
                 [ text "Close Preview" ]
             ]
+
+
+browseSourceLink : Source -> Html Msg
+browseSourceLink source =
+    case source of
+        Local ->
+            text ""
+
+        Remote _ repo ->
+            div []
+                [ a
+                    [ style "margin-top" "20px"
+                    , style "cursor" "pointer"
+                    , href (githubSource repo)
+                    ]
+                    [ text "Browse Source" ]
+                ]
+
+
+githubSource : Repo -> String
+githubSource repo =
+    Url.Builder.crossOrigin "https://github.com"
+        [ repo.name
+        , "tree"
+        , repo.version
+        ]
+        []
 
 
 onEnterOrSpace : msg -> Html.Attribute msg
