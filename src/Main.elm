@@ -13,6 +13,7 @@ import File.Select as Select
 import Html exposing (Html, a, div, h1, li, span, text, ul)
 import Html.Attributes exposing (class, href, id, style, title)
 import Html.Events exposing (on, onClick, preventDefaultOn)
+import Html.Extra as Html exposing (viewIf)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
@@ -466,15 +467,6 @@ navigation model =
         ]
 
 
-viewIf : Bool -> Html msg -> Html msg
-viewIf cond viewer =
-    if cond then
-        viewer
-
-    else
-        text ""
-
-
 logo : Html msg
 logo =
     div
@@ -520,7 +512,7 @@ openLink =
 closeLink : Model -> Html Msg
 closeLink model =
     if model.readme == Nothing && model.modules == [] then
-        text ""
+        Html.nothing
 
     else
         div []
@@ -538,7 +530,7 @@ browseSourceLink : Source -> Html Msg
 browseSourceLink source =
     case source of
         Local ->
-            text ""
+            Html.nothing
 
         Remote _ repo ->
             div []

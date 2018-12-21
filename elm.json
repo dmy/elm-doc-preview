@@ -15,6 +15,7 @@
             "elm/project-metadata-utils": "1.0.0",
             "elm/svg": "1.0.1",
             "elm/url": "1.0.0",
+            "elm-community/html-extra": "3.0.0",
             "elm-community/maybe-extra": "5.0.0",
             "elm-explorations/markdown": "1.0.0"
         },
