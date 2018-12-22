@@ -382,7 +382,7 @@ Open a package `README.md`, `docs.json` (from `elm make --docs=docs.json`) or bo
 
 ## Sharing documentation
 
-To share some unpublished package documentation (for example for review), commit `README.md` and/or `docs.json` to a github repository branch and use the following query parameters:
+To share some unpublished package documentation (for example for review), commit `README.md` and `docs.json` (generated with `elm make --docs docs.json`) to a github repository and use the following query parameters:
 
 **`repo`**
 > The github repository, for example `dmy/elm-doc-example`.
