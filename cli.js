@@ -4,11 +4,12 @@ const fs = require("fs");
 const path = require("path");
 const sane = require("sane");
 const spawn = require("cross-spawn");
-const express = require("express");
-const expressWs = require("express-ws");
 const tmp = require("tmp");
 const chalk = require("chalk");
 const commander = require("commander");
+const express = require("express");
+const expressWs = require("express-ws");
+const ws = require("ws");
 
 const npmPackage = require(path.join(__dirname, "package.json"));
 
@@ -137,6 +138,7 @@ class Previewer {
     this.timeout = null;
     this.app = null;
     this.ws = null;
+    this.wss = null;
 
     log(chalk`Previewing {magenta ${this.pkgName}} from ${path.resolve(dir)}`);
 
@@ -147,7 +149,8 @@ class Previewer {
 
   setupWebServer() {
     this.app = express();
-    expressWs(this.app);
+    this.ws = expressWs(this.app);
+    this.wss = this.ws.getWss();
 
     this.app.use(
       "/",
@@ -155,8 +158,12 @@ class Previewer {
     );
 
     // websockets
-    this.app.ws("/", ws => {
-      this.ws = ws;
+    this.app.ws("/", (socket, req) => {
+      log(`  |> ${req.connection.remoteAddress} connected`);
+      socket.on("close", () => {
+        log("  |> client disconnected");
+      });
+
       this.sendCompilation(this.lastBuild);
       this.sendReadme();
       this.sendDocs();
@@ -228,11 +235,16 @@ class Previewer {
     return build.stderr.toString();
   }
 
-  // Send JSON message
+  broadcast(data) {
+    this.wss.clients.forEach(client => {
+      if (client.readyState === ws.OPEN) {
+        client.send(data);
+      }
+    });
+  }
+
   send(type, data) {
-    if (this.ws) {
-      this.ws.send(JSON.stringify({ type, data }));
-    }
+    this.broadcast(JSON.stringify({ type, data }));
   }
 
   sendCompilation(output) {

@@ -8,7 +8,8 @@
     "express-ws": "^4.0.0",
     "sane": "^4.0.2",
     "serve-static": "^1.13.2",
-    "tmp": "0.0.33"
+    "tmp": "0.0.33",
+    "ws": "^6.2.0"
   },
   "devDependencies": {
     "csso-cli": "^1.1.0",
