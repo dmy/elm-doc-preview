@@ -38,7 +38,7 @@
   "bin": {
     "elm-doc-preview": "./cli.js"
   },
-  "main": "./cli.js",
+  "main": "./lib/elm-doc-server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "make"
