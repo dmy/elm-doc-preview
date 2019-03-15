@@ -6,6 +6,7 @@ const sane = require("sane");
 const spawn = require("cross-spawn");
 const tmp = require("tmp");
 const chalk = require("chalk");
+const latestVersion = require("latest-version");
 const commander = require("commander");
 const express = require("express");
 const expressWs = require("express-ws");
@@ -125,6 +126,14 @@ function getElm() {
   }
 
   return [elm, version];
+}
+
+function checkUpdate(currentVersion) {
+  latestVersion("elm-doc-preview").then(lastVersion => {
+    if (lastVersion !== currentVersion) {
+      log(chalk.yellow(`elm-doc-preview ${lastVersion} is available`));
+    }
+  });
 }
 
 class Previewer {
@@ -271,6 +280,7 @@ class Previewer {
  * Run program
  */
 const program = init();
+checkUpdate(npmPackage.version);
 const [elm, elmVersion] = getElm();
 log(
   chalk`{bold elm-doc-preview ${npmPackage.version}} using elm ${elmVersion}`
