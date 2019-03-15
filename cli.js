@@ -5,221 +5,267 @@ const path = require("path");
 const sane = require("sane");
 const spawn = require("cross-spawn");
 const express = require("express");
+const expressWs = require("express-ws");
 const tmp = require("tmp");
 const chalk = require("chalk");
-const program = require("commander");
+const commander = require("commander");
 
-const pkg = require(path.join(__dirname, "package.json"));
+const npmPackage = require(path.join(__dirname, "package.json"));
 
-function error(log) {
-  console.log(chalk.red("Error:"), chalk.red(log));
-}
-
-program
-  .version(pkg.version)
-  .arguments("[path_to_package]")
-  .action(dir => {
-    if (fs.existsSync(dir)) {
-      try {
-        process.chdir(dir);
-      } catch (err) {
-        error(`cannot change directory to ${dir} (${err})`);
-        process.exit(1);
-      }
-    }
-  })
-  .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
-  .parse(process.argv);
-
-function getFile(filepath) {
-  if (!fs.existsSync(filepath)) {
-    return "";
-  }
-
-  const data = fs.readFileSync(filepath, "utf8");
-  if (data) {
-    return data;
-  }
-  return "";
-}
 /*
- * Get temp file for docs.json
+ * Program options and usage
  */
-tmp.setGracefulCleanup();
+function init() {
+  let pkgPath = ".";
+  const program = commander
+    .version(npmPackage.version)
+    .arguments("[path_to_package]")
+    .action(dir => {
+      if (dir !== undefined) {
+        pkgPath = dir;
+      }
+    })
+    .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
+    .parse(process.argv);
 
-const docs = tmp.fileSync({
-  prefix: "elm-docs-",
-  postfix: ".json"
-});
+  program.dir = pkgPath;
+  return program;
+}
 
+function error(err) {
+  console.log(chalk.red("Error:"), chalk.red(err));
+}
+
+function fatalError(err) {
+  error(err);
+  error("Exiting...");
+  process.exit(1);
+}
+
+function log(...args) {
+  console.log(...args);
+}
+
+/*
+ * Get temporary file
+ */
+function getTmpFile(prefix, postfix) {
+  tmp.setGracefulCleanup();
+  const tmpFile = tmp.fileSync({ prefix, postfix });
+  return tmpFile;
+}
+
+/*
+ * Return synchronously read file content
+ */
+function readFile(filepath) {
+  if (!fs.existsSync(filepath)) {
+    return undefined;
+  }
+
+  return fs.readFileSync(filepath, "utf8");
+}
+
+/*
+ * Get parsed elm.json
+ */
+function getElmJson(dir = ".") {
+  let elmJson = {};
+  try {
+    elmJson = JSON.parse(fs.readFileSync(`${dir}/elm.json`, "utf8"));
+  } catch (e) {
+    fatalError(`invalid elm.json file (${e})`);
+  }
+  return elmJson;
+}
+
+/*
+ * Check package and return its name
+ */
+function getPkgName(elmJson) {
+  if (!("type" in elmJson) || elmJson.type !== "package") {
+    const type = "type" in elmJson ? elmJson.type : "program";
+    fatalError(
+      `unsupported Elm ${type}, only packages documentation can be previewed`
+    );
+  }
+  let pkgName = "name" in elmJson ? elmJson.name : "package";
+  if ("version" in elmJson) {
+    pkgName += ` ${elmJson.version}`;
+  }
+
+  return pkgName;
+}
+
+/*
+ * Find and check Elm executable
+ */
+function getElm() {
+  let elm = (args, cwd = ".") =>
+    spawn.sync("npx", ["--no-install", "elm"].concat(args), { cwd });
+
+  let exec = elm(["--version"]);
+  if (exec.error || exec.status !== 0 || exec.stderr.toString().length > 0) {
+    elm = (args, cwd = ".") => spawn.sync("elm", args, { cwd });
+    exec = elm(["--version"]);
+  }
+
+  if (exec.error) {
+    fatalError(`cannot run 'elm --version' (${exec.error})`);
+  } else if (exec.status !== 0) {
+    error(`cannot run 'elm --version':`);
+    process.stderr.write(exec.stderr);
+    process.exit(exec.status);
+  }
+
+  const version = exec.stdout.toString().trim();
+  if (!version.startsWith("0.19")) {
+    fatalError(`unsupported Elm version ${elm.version}`);
+  }
+
+  return [elm, version];
+}
+
+class Previewer {
+  constructor(dir, elm, port) {
+    this.dir = dir;
+    this.elm = elm;
+    this.port = port;
+    this.elmJson = getElmJson(dir);
+    this.pkgName = getPkgName(this.elmJson);
+    this.docsJson = getTmpFile("elm-docs-", ".json");
+    this.timeout = null;
+    this.app = null;
+    this.ws = null;
+
+    log(chalk`Previewing {magenta ${this.pkgName}} from ${path.resolve(dir)}`);
+
+    this.lastBuild = this.buildDocs();
+    this.setupWebServer();
+    this.setupFilesWatcher();
+  }
+
+  setupWebServer() {
+    this.app = express();
+    expressWs(this.app);
+
+    this.app.use(
+      "/",
+      express.static(path.join(__dirname, "public"), { index: "local.html" })
+    );
+
+    // websockets
+    this.app.ws("/", ws => {
+      this.ws = ws;
+      this.sendCompilation(this.lastBuild);
+      this.sendReadme();
+      this.sendDocs();
+    });
+
+    // default route
+    this.app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "public/local.html"));
+    });
+  }
+
+  setupFilesWatcher() {
+    const watcher = sane(".", {
+      glob: ["**/elm.json", "src/**/*.elm", "**/README.md"]
+    });
+    log(`  |> watching elm.json, README.md and *.elm files`);
+
+    watcher.on("ready", () => {
+      log(
+        chalk`{blue Browse} {bold {green <http://localhost:${
+          this.port
+        }>}} {blue to see your documentation}`
+      );
+    });
+    watcher.on("change", filepath => {
+      this.onChange(filepath, this.docsJson);
+    });
+    watcher.on("add", filepath => {
+      this.onChange(filepath, this.docsJson);
+    });
+    watcher.on("delete", filepath => {
+      this.onChange(filepath, this.docsJson);
+    });
+  }
+
+  run() {
+    this.app.listen(this.port);
+  }
+
+  onChange(filepath) {
+    // Update docs with debounce: try to batch consecutive updates
+    // (for example the way vim saves files would lead to 3 rebuilds else)
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = setTimeout(() => {
+      this.timeout = null;
+      log("  |>", "detected", filepath, "modification");
+      if (filepath.endsWith("README.md")) {
+        this.sendReadme();
+      } else {
+        const build = this.buildDocs();
+        this.sendCompilation(build);
+        this.sendDocs();
+      }
+    }, 100);
+  }
+
+  // Build docs.json and return output
+  buildDocs() {
+    log("  |> building documentation");
+    const build = this.elm(
+      ["make", `--docs=${this.docsJson.name}`, "--report=json"],
+      this.dir
+    );
+    if (build.error) {
+      fatalError(`cannot build documentation (${build.error})`);
+    }
+    return build.stderr.toString();
+  }
+
+  // Send JSON message
+  send(type, data) {
+    if (this.ws) {
+      this.ws.send(JSON.stringify({ type, data }));
+    }
+  }
+
+  sendCompilation(output) {
+    log("  |>", "updating compilation status");
+    this.send("compilation", output);
+  }
+
+  sendReadme() {
+    log("  |>", "updating README preview");
+    this.send("readme", readFile("README.md") || "");
+  }
+
+  sendDocs() {
+    log("  |>", `updating ${this.docsJson.name} preview`);
+    this.send("docs", readFile(this.docsJson.name) || "[]");
+  }
+
+  removeDocsJson() {
+    this.docsJson.removeCallback();
+  }
+}
+
+/*
+ * Run program
+ */
+const program = init();
+const [elm, elmVersion] = getElm();
+log(
+  chalk`{bold elm-doc-preview ${npmPackage.version}} using elm ${elmVersion}`
+);
+const previewer = new Previewer(program.dir, elm, program.port);
 process.on("SIGINT", () => {
-  docs.removeCallback();
+  previewer.removeDocsJson();
   process.exit(0);
 });
-
-/*
- * Check package
- */
-let elmJson = {};
-try {
-  elmJson = JSON.parse(fs.readFileSync("elm.json", "utf8"));
-} catch (e) {
-  error(`invalid elm.json file (${e})`);
-  process.exit(1);
-}
-
-if (!("type" in elmJson) || elmJson.type !== "package") {
-  const type = "type" in elmJson ? elmJson.type : "program";
-  error(
-    `unsupported Elm ${type}, only packages documentation can be previewed`
-  );
-  process.exit(1);
-}
-let pkgName = "name" in elmJson ? elmJson.name : "package";
-if ("version" in elmJson) {
-  pkgName += ` ${elmJson.version}`;
-}
-
-/*
- * Find and check Elm
- */
-let elm = args => spawn.sync("npx", ["--no-install", "elm"].concat(args));
-
-let exec = elm(["--version"]);
-if (exec.error || exec.status !== 0 || exec.stderr.toString().length > 0) {
-  elm = args => spawn.sync("elm", args);
-  exec = elm(["--version"]);
-}
-
-if (exec.error) {
-  error(`cannot run 'elm --version' (${exec.error})`);
-  process.exit(1);
-} else if (exec.status !== 0) {
-  error(`cannot run 'elm --version':`);
-  process.stderr.write(exec.stderr);
-  process.exit(exec.status);
-}
-
-const elmVersion = exec.stdout.toString().trim();
-if (!elmVersion.startsWith("0.19")) {
-  error(`unsupported Elm version ${elmVersion}`);
-  process.exit(1);
-}
-
-function buildDoc() {
-  console.log("  |> building documentation");
-  const build = elm(["make", `--docs=${docs.name}`, "--report=json"]);
-  if (build.error) {
-    error(`cannot build documentation (${build.error})`);
-    process.exit(1);
-  }
-  return build.stderr.toString();
-}
-
-/*
- * Starting message
- */
-console.log(
-  chalk`{bold elm-doc-preview ${pkg.version}} using elm ${elmVersion}`
-);
-console.log(chalk`Previewing {magenta ${pkgName}} from ${process.cwd()}`);
-
-/*
- * Set web server
- */
-let ws = null;
-
-function send(type, data) {
-  if (ws !== null) {
-    ws.send(JSON.stringify({ type, data }));
-  }
-}
-
-function sendCompilation(output) {
-  console.log("  |>", "updating compilation status");
-  send("compilation", output);
-}
-function sendReadme() {
-  console.log("  |>", "updating README preview");
-  send("readme", getFile("README.md"));
-}
-function sendDocs() {
-  console.log("  |>", `updating ${docs.name} preview`);
-  send("docs", getFile(docs.name));
-}
-
-const app = express();
-require("express-ws")(app);
-
-app.use(
-  "/",
-  express.static(path.join(__dirname, "public"), { index: "local.html" })
-);
-
-let buildReport = buildDoc();
-
-app.ws("/", _ws => {
-  ws = _ws;
-  sendCompilation(buildReport);
-  sendReadme();
-  sendDocs();
-});
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/local.html"));
-});
-
-let timeout = null;
-function onChange(filepath) {
-  /* Try to batch consecutive updates.
-   * (for example the way vim saves files would lead to 3 rebuilds else)
-   */
-  if (timeout) {
-    clearTimeout(timeout);
-  }
-  timeout = setTimeout(() => {
-    timeout = null;
-    console.log("  |>", "detected", filepath, "modification");
-    if (filepath.endsWith("README.md")) {
-      sendReadme();
-    } else {
-      buildReport = buildDoc();
-      sendCompilation(buildReport);
-      sendDocs();
-    }
-  }, 100);
-}
-
-/*
- * Set files watcher
- */
-const watcher = sane(".", {
-  glob: ["**/elm.json", "src/**/*.elm", "**/README.md"]
-});
-console.log(`  |> watching elm.json, README.md and *.elm files`);
-
-function ready() {
-  console.log(
-    chalk`{blue Browse} {bold {green <http://localhost:${
-      program.port
-    }>}} {blue to see your documentation}`
-  );
-}
-
-watcher.on("ready", () => {
-  ready();
-});
-watcher.on("change", filepath => {
-  onChange(filepath);
-});
-watcher.on("add", filepath => {
-  onChange(filepath);
-});
-watcher.on("delete", filepath => {
-  onChange(filepath);
-});
-
-/*
- * Run web server
- */
-app.listen(program.port);
+previewer.run();
