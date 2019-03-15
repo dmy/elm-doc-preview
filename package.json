@@ -36,7 +36,8 @@
   "homepage": "https://github.com/dmy/elm-doc-preview#readme",
   "version": "1.0.7",
   "bin": {
-    "elm-doc-preview": "./cli.js"
+    "elm-doc-preview": "./cli.js",
+    "edp": "./cli.js"
   },
   "main": "./lib/elm-doc-server.js",
   "scripts": {
