@@ -147,7 +147,7 @@ init flags url navKey =
     , Cmd.batch
         [ focusOpenFilesLink
         , getDoc source
-        , jumpToFragment url
+        , scrollToFragment url
         ]
     )
 
@@ -644,13 +644,13 @@ update msg model =
         DocsLoaded docs ->
             ( setModules (decodeDocs docs) model
             , Cmd.batch
-                [ jumpToFragment model.url
+                [ scrollToFragment model.url
                 , storeDocs docs
                 ]
             )
 
         DocsRequestCompleted (Ok docs) ->
-            ( setModules (decodeDocs docs) model, jumpToFragment model.url )
+            ( setModules (decodeDocs docs) model, scrollToFragment model.url )
 
         DocsRequestCompleted (Err error) ->
             ( setModules [] model, Cmd.none )
@@ -658,13 +658,13 @@ update msg model =
         ReadmeLoaded readme ->
             ( setReadme (Just readme) model
             , Cmd.batch
-                [ jumpToFragment model.url
+                [ scrollToFragment model.url
                 , storeReadme readme
                 ]
             )
 
         ReadmeRequestCompleted (Ok readme) ->
-            ( setReadme (Just readme) model, jumpToFragment model.url )
+            ( setReadme (Just readme) model, scrollToFragment model.url )
 
         ReadmeRequestCompleted (Err error) ->
             ( setReadme Nothing model, Cmd.none )
@@ -682,7 +682,7 @@ update msg model =
             ( { model | page = urlToPage url, url = url }
             , Cmd.batch
                 [ addUrlQuery model url
-                , jumpToFragment url
+                , scrollToFragment url
                 ]
             )
 
@@ -746,8 +746,8 @@ setModules modules model =
     }
 
 
-jumpToFragment : Url -> Cmd Msg
-jumpToFragment url =
+scrollToFragment : Url -> Cmd Msg
+scrollToFragment url =
     case url.fragment of
         Just id ->
             Dom.getElement id
