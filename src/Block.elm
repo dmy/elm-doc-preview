@@ -10,7 +10,13 @@ import Elm.Type as Type
 import Elm.Version as V
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Extra exposing (nothing)
+import Regex
 import Utils.Markdown as Markdown
+
+
+type alias Block r =
+    { r | name : String }
 
 
 
@@ -26,33 +32,47 @@ maxWidth =
 -- VIEW
 
 
-view : Info -> Docs.Block -> Html msg
-view info block =
+view : String -> Info -> Docs.Block -> Html msg
+view filter info block =
     case block of
         Docs.MarkdownBlock markdown ->
-            span [ class "markdown-block" ] [ Markdown.block markdown ]
+            if String.isEmpty filter then
+                span [ class "markdown-block" ] [ Markdown.block markdown ]
+
+            else
+                nothing
 
         Docs.ValueBlock value ->
-            viewValue info value
+            viewFilteredBy filter value (viewValue info)
 
         Docs.BinopBlock binop ->
-            viewBinop info binop
+            viewFilteredBy filter binop (viewBinop info)
 
         Docs.AliasBlock alias ->
-            viewAlias info alias
+            viewFilteredBy filter alias (viewAlias info)
 
         Docs.UnionBlock union ->
-            viewUnion info union
+            viewFilteredBy filter union (viewUnion info)
 
         Docs.UnknownBlock name ->
-            span
-                [ class "TODO-make-this-red" ]
-                [ text "It seems that "
-                , code [] [ text name ]
-                , text " does not have any docs. Please open a bug report "
-                , a [ href "https://github.com/elm/package.elm-lang.org/issues" ] [ text "here" ]
-                , text " with the title “UnknownBlock found in docs” and with a link to this page in the description."
-                ]
+            nothing
+
+
+viewFilteredBy : String -> Block r -> (Block r -> Html msg) -> Html msg
+viewFilteredBy filter record viewer =
+    if contains filter record.name then
+        viewer record
+
+    else
+        nothing
+
+
+contains : String -> String -> Bool
+contains pattern str =
+    pattern
+        |> Regex.fromStringWith { caseInsensitive = True, multiline = False }
+        |> Maybe.map (\regex -> Regex.contains regex str)
+        |> Maybe.withDefault False
 
 
 viewCodeBlock : String -> String -> List (Line msg) -> Html msg

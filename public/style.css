@@ -189,12 +189,16 @@ pre {
   vertical-align: top;
   padding: 0 0 0px 20px;
   margin: 8px 0 20px 0px;
+  background-color: rgba(255, 255, 255, 0.9);
 }
 
 @media (min-width: 920px) {
   .pkg-nav {
-    margin: 8px 0 20px 40px;
+    position: sticky;
+    top: 0px;
+    margin: 0px 0 20px 40px;
     border-left: 1px solid #eeeeee;
+    border-top: 20px solid rgba(255, 255, 255, 0.9);
     padding: 0 0 20px 20px;
   }
 }
@@ -206,9 +210,12 @@ pre {
 .pkg-nav input {
   width: 240px;
   font-size: 1em;
-  padding: 0;
-  margin: 0;
+  padding: 4px;
+  margin: 20px 0;
+  border: 1px solid #eeeeee;
+  border-radius: 6px;
 }
+
 
 .pkg-nav ul {
   list-style-type: none;

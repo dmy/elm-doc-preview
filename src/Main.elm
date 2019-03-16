@@ -11,14 +11,15 @@ import Errors exposing (viewError)
 import File exposing (File)
 import File.Select as Select
 import Howto exposing (howto, howtoWithModules)
-import Html exposing (Html, a, div, h1, li, span, text, ul)
-import Html.Attributes exposing (class, href, id, style, title)
-import Html.Events exposing (on, onClick, preventDefaultOn)
+import Html exposing (Html, a, div, h1, input, li, span, text, ul)
+import Html.Attributes exposing (class, href, id, placeholder, style, title, value)
+import Html.Events exposing (on, onClick, onInput, preventDefaultOn)
 import Html.Extra as Html exposing (viewIf)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
 import Maybe.Extra as Maybe
+import Regex
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
 import Task
@@ -75,6 +76,7 @@ type Msg
     | DocsRequestCompleted (Result Http.Error String)
     | ReadmeLoaded String
     | ReadmeRequestCompleted (Result Http.Error String)
+    | FilterChanged String
     | LocationHrefRequested String
     | UrlRequested UrlRequest
     | UrlChanged Url
@@ -89,6 +91,7 @@ type alias Model =
     , source : Source
     , online : Bool
     , error : Maybe Error.Error
+    , filter : String
     }
 
 
@@ -143,6 +146,7 @@ init flags url navKey =
       , source = source
       , online = flags.online
       , error = Nothing
+      , filter = ""
       }
     , Cmd.batch
         [ focusOpenFilesLink
@@ -343,7 +347,10 @@ page model =
             ( Module name, _, modules ) ->
                 case List.filter (\m -> m.name == name) modules of
                     currentModule :: _ ->
-                        doc model.modules currentModule (sourceQuery model.source)
+                        doc model.filter
+                            model.modules
+                            currentModule
+                            (sourceQuery model.source)
 
                     _ ->
                         [ h1 [] [ text "Error" ]
@@ -371,14 +378,14 @@ compilationError error =
         [ viewError error ]
 
 
-doc : List Docs.Module -> Docs.Module -> String -> List (Html msg)
-doc modules currentModule query =
+doc : String -> List Docs.Module -> Docs.Module -> String -> List (Html msg)
+doc filter modules currentModule query =
     let
         info =
             Block.makeInfo currentModule.name modules query
     in
     h1 [ class "block-list-title" ] [ text currentModule.name ]
-        :: List.map (Block.view info) (Docs.toBlocks currentModule)
+        :: List.map (Block.view filter info) (Docs.toBlocks currentModule)
 
 
 
@@ -387,9 +394,7 @@ doc modules currentModule query =
 
 navigation : Model -> Html Msg
 navigation model =
-    div
-        [ class "pkg-nav"
-        ]
+    div [ class "pkg-nav" ]
         [ logo
         , viewIf (model.online && not (isLoading model)) <|
             openLink
@@ -398,9 +403,14 @@ navigation model =
         , viewIf (model.readme /= Nothing) <|
             navLinks model.source model.page [ Readme ]
         , browseSourceLink model.source
-        , model.modules
-            |> List.map (\m -> Module m.name)
-            |> navLinks model.source model.page
+        , filterBox model.filter model.modules
+        , if String.isEmpty model.filter then
+            model.modules
+                |> List.map (\m -> Module m.name)
+                |> navLinks model.source model.page
+
+          else
+            search model.source model.page model.filter model.modules
         ]
 
 
@@ -452,10 +462,9 @@ closeLink model =
         Html.nothing
 
     else
-        div []
+        div [ style "margin-bottom" "10px" ]
             [ a
-                [ style "margin-top" "20px"
-                , style "cursor" "pointer"
+                [ style "cursor" "pointer"
                 , href "/"
                 , onClick ClosePreviewClicked
                 ]
@@ -478,6 +487,70 @@ browseSourceLink source =
                     ]
                     [ text "Browse Source" ]
                 ]
+
+
+filterBox : String -> List Docs.Module -> Html Msg
+filterBox filter modules =
+    input
+        [ placeholder "Filter regex"
+        , value filter
+        , onInput FilterChanged
+        ]
+        []
+
+
+search : Source -> Page -> String -> List Docs.Module -> Html Msg
+search source currentPage filter modules =
+    ul []
+        (List.filterMap (searchModule source currentPage filter) modules)
+
+
+searchModule : Source -> Page -> String -> Docs.Module -> Maybe (Html Msg)
+searchModule source currentPage filter m =
+    let
+        results =
+            List.concat
+                [ searchFrom m.binops filter
+                , searchFrom m.unions filter
+                , searchFrom m.aliases filter
+                , searchFrom m.values filter
+                ]
+    in
+    if List.isEmpty results then
+        Nothing
+
+    else
+        Just <|
+            li [ class "pkg-nav-search-chunk" ]
+                [ pageLink source currentPage (Module m.name)
+                , ul [] (List.map (searchResult source m.name) results)
+                ]
+
+
+searchFrom : List { r | name : String } -> String -> List String
+searchFrom records filter =
+    List.filterMap
+        (\r ->
+            if contains filter r.name then
+                Just r.name
+
+            else
+                Nothing
+        )
+        records
+
+
+contains : String -> String -> Bool
+contains pattern str =
+    pattern
+        |> Regex.fromStringWith { caseInsensitive = True, multiline = False }
+        |> Maybe.map (\regex -> Regex.contains regex str)
+        |> Maybe.withDefault False
+
+
+searchResult : Source -> String -> String -> Html Msg
+searchResult source module_ symbol =
+    resultLink source module_ symbol
 
 
 githubSource : Repo -> String
@@ -507,12 +580,12 @@ onEnterOrSpace msg =
 
 navLinks : Source -> Page -> List Page -> Html msg
 navLinks source currentPage pages =
-    ul [ style "margin-top" "20px" ]
-        (List.map (navLink source currentPage) pages)
+    ul []
+        (List.map (pageLink source currentPage) pages)
 
 
-navLink : Source -> Page -> Page -> Html msg
-navLink source currentPage targetPage =
+pageLink : Source -> Page -> Page -> Html msg
+pageLink source currentPage targetPage =
     li []
         [ a
             [ class "pkg-nav-module"
@@ -526,6 +599,23 @@ navLink source currentPage targetPage =
 
                 Module name ->
                     text name
+            ]
+        ]
+
+
+resultLink : Source -> String -> String -> Html Msg
+resultLink source module_ symbol =
+    li []
+        [ a
+            [ class "pkg-nav-module"
+            , (href << String.concat) <|
+                [ pagePath (Module module_)
+                , sourceQuery source
+                , "#"
+                , symbol
+                ]
+            ]
+            [ text symbol
             ]
         ]
 
@@ -669,6 +759,9 @@ update msg model =
         ReadmeRequestCompleted (Err error) ->
             ( setReadme Nothing model, Cmd.none )
 
+        FilterChanged filterValue ->
+            ( { model | filter = filterValue }, Cmd.none )
+
         LocationHrefRequested href ->
             ( model, requestLocationHref model.navKey href )
 
@@ -680,10 +773,7 @@ update msg model =
 
         UrlChanged url ->
             ( { model | page = urlToPage url, url = url }
-            , Cmd.batch
-                [ addUrlQuery model url
-                , scrollToFragment url
-                ]
+            , addUrlQuery model url
             )
 
 
@@ -694,7 +784,7 @@ addUrlQuery model url =
             Cmd.none
 
         ( True, "" ) ->
-            Cmd.none
+            scrollToFragment url
 
         ( True, query ) ->
             Nav.replaceUrl model.navKey <|
@@ -766,6 +856,7 @@ closePreview model =
         , page = Readme
         , source = Local
         , error = Nothing
+        , filter = ""
     }
 
 
