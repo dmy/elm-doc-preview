@@ -86,8 +86,19 @@ info(
 );
 
 const docServer = new DocServer(program.dir, elm, program.port);
-process.on("SIGINT", () => {
-  docServer.removeDocsJson();
-  process.exit(0);
-});
+
+process
+  .on("SIGINT", () => {
+    docServer.removeDocsJson();
+    process.exit(0);
+  })
+  .on("uncaughtException", e => {
+    if (e.errno === "EADDRINUSE") {
+      fatal(chalk.red(`port ${program.port} already used, use --port option`));
+    } else {
+      console.log(chalk.red(e));
+      process.exit(1);
+    }
+  });
+
 docServer.run();
