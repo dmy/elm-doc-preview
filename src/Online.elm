@@ -1,8 +1,8 @@
-module Howto exposing (howto, howtoWithModules)
+module Online exposing (readme, readmeWithModules)
 
 
-howto : String
-howto =
+readme : String
+readme =
     """
 # Elm Documentation Previewer
 
@@ -66,8 +66,8 @@ https://github.com/dmy/elm-doc-preview/issues.
 """
 
 
-howtoWithModules : String
-howtoWithModules =
+readmeWithModules : String
+readmeWithModules =
     """
 # Elm Documentation Previewer
 

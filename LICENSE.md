@@ -3,7 +3,7 @@
 ## [elm-doc-preview](https://github.com/dmy/elm-doc-preview)
 
 Copyright (c) 2014-2018, Evan Czaplicki  
-Copyright (c) 2018, Rémi Lefèvre
+Copyright (c) 2018-2019, Rémi Lefèvre
 
 All rights reserved.
 

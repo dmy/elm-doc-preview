@@ -4,13 +4,13 @@ import Block
 import Browser exposing (UrlRequest(..))
 import Browser.Dom as Dom
 import Browser.Navigation as Nav
+import Dict exposing (Dict)
 import Elm.Docs as Docs
 import Elm.Error as Error
 import Elm.Type as Type
 import Errors exposing (viewError)
 import File exposing (File)
 import File.Select as Select
-import Howto exposing (howto, howtoWithModules)
 import Html exposing (Html, a, div, h1, input, li, span, text, ul)
 import Html.Attributes exposing (class, href, id, placeholder, style, title, value)
 import Html.Events exposing (on, onClick, onInput, preventDefaultOn)
@@ -19,6 +19,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
 import Maybe.Extra as Maybe
+import Online
 import Regex
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
@@ -44,13 +45,19 @@ import Utils.Markdown as Markdown
 port locationHrefRequested : (String -> msg) -> Sub msg
 
 
-port compilationCompleted : (String -> msg) -> Sub msg
+port nameUpdated : (String -> msg) -> Sub msg
+
+
+port compilationUpdated : (String -> msg) -> Sub msg
 
 
 port readmeUpdated : (String -> msg) -> Sub msg
 
 
 port docsUpdated : (String -> msg) -> Sub msg
+
+
+port depsUpdated : (Decode.Value -> msg) -> Sub msg
 
 
 port storeReadme : String -> Cmd msg
@@ -68,7 +75,9 @@ port clearStorage : () -> Cmd msg
 
 type Msg
     = Ignored String
+    | NameUpdated String
     | CompilationCompleted String
+    | DepsUpdated Decode.Value
     | OpenFilesClicked
     | GotFiles File (List File)
     | ClosePreviewClicked
@@ -77,14 +86,17 @@ type Msg
     | ReadmeLoaded String
     | ReadmeRequestCompleted (Result Http.Error String)
     | FilterChanged String
+    | OwnerChanged Owner
     | LocationHrefRequested String
     | UrlRequested UrlRequest
     | UrlChanged Url
 
 
 type alias Model =
-    { readme : Maybe String
+    { name : Maybe String
+    , readme : Maybe String
     , modules : List Docs.Module
+    , deps : Dict String Dep
     , navKey : Nav.Key
     , url : Url
     , page : Page
@@ -95,9 +107,21 @@ type alias Model =
     }
 
 
+type alias Dep =
+    { version : String
+    , readme : String
+    , modules : List Docs.Module
+    }
+
+
 type Page
-    = Readme
-    | Module String
+    = Readme Owner
+    | Module Owner String
+
+
+type Owner
+    = Main
+    | Package String
 
 
 type Source
@@ -138,11 +162,13 @@ init flags url navKey =
         ( readme, modules ) =
             initDoc source flags
     in
-    ( { readme = readme
+    ( { name = Nothing
+      , readme = readme
       , modules = modules
+      , deps = Dict.empty
       , navKey = navKey
       , url = url
-      , page = urlToPage url
+      , page = urlToPage url Main
       , source = source
       , online = flags.online
       , error = Nothing
@@ -289,7 +315,7 @@ viewMain model =
 
             _ ->
                 page model
-        , navigation model
+        , navigation (pageOwner model.page) model
         ]
 
 
@@ -334,28 +360,68 @@ isLoading model =
 page : Model -> Html Msg
 page model =
     div [ class "block-list" ] <|
-        case ( model.page, model.readme, model.modules ) of
-            ( Readme, Just readme, _ ) ->
-                [ Markdown.block readme ]
+        case model.page of
+            Readme owner ->
+                [ Markdown.block (pageReadme owner model) ]
 
-            ( Readme, Nothing, [] ) ->
-                [ Markdown.block howto ]
+            Module owner name ->
+                filteredModule model.filter
+                    (pageModules owner model)
+                    model.source
+                    name
 
-            ( Readme, Nothing, _ ) ->
-                [ Markdown.block howtoWithModules ]
 
-            ( Module name, _, modules ) ->
-                case List.filter (\m -> m.name == name) modules of
-                    currentModule :: _ ->
-                        doc model.filter
-                            model.modules
-                            currentModule
-                            (sourceQuery model.source)
+pageReadme : Owner -> Model -> String
+pageReadme owner model =
+    case ( owner, model.readme, model.online ) of
+        ( Main, Nothing, True ) ->
+            case model.modules of
+                [] ->
+                    Online.readme
 
-                    _ ->
-                        [ h1 [] [ text "Error" ]
-                        , text ("Module \"" ++ name ++ "\" not found.")
-                        ]
+                _ ->
+                    Online.readmeWithModules
+
+        ( Main, Just readme, _ ) ->
+            readme
+
+        ( Package pkg, _, _ ) ->
+            case Dict.get pkg model.deps of
+                Just dep ->
+                    dep.readme
+
+                Nothing ->
+                    ""
+
+        _ ->
+            ""
+
+
+pageModules : Owner -> Model -> List Docs.Module
+pageModules owner model =
+    case owner of
+        Main ->
+            model.modules
+
+        Package pkg ->
+            case Dict.get pkg model.deps of
+                Just dep ->
+                    dep.modules
+
+                Nothing ->
+                    []
+
+
+filteredModule : String -> List Docs.Module -> Source -> String -> List (Html Msg)
+filteredModule filter modules source name =
+    case List.filter (\m -> m.name == name) modules of
+        currentModule :: _ ->
+            doc filter modules currentModule (sourceQuery source)
+
+        _ ->
+            [ h1 [] [ text "Error" ]
+            , text ("Module \"" ++ name ++ "\" not found.")
+            ]
 
 
 spinner : Html msg
@@ -392,25 +458,26 @@ doc filter modules currentModule query =
 -- Side navigation bar
 
 
-navigation : Model -> Html Msg
-navigation model =
+navigation : Owner -> Model -> Html Msg
+navigation owner model =
     div [ class "pkg-nav" ]
         [ logo
         , viewIf (model.online && not (isLoading model)) <|
             openLink
         , viewIf model.online <|
             closeLink model
-        , viewIf (model.readme /= Nothing) <|
-            navLinks model.source model.page [ Readme ]
-        , browseSourceLink model.source
         , filterBox model.filter model.modules
+        , viewIf (model.readme /= Nothing) <|
+            navLinks model.source model.page [ Readme owner ]
+        , browseSourceLink model.source
         , if String.isEmpty model.filter then
-            model.modules
-                |> List.map (\m -> Module m.name)
+            pageModules owner model
+                |> List.map (\m -> Module owner m.name)
                 |> navLinks model.source model.page
 
           else
-            search model.source model.page model.filter model.modules
+            search model.source model.page model.filter (pageModules owner model)
+        , packages owner model.name model.deps
         ]
 
 
@@ -479,10 +546,9 @@ browseSourceLink source =
             Html.nothing
 
         Remote _ repo ->
-            div []
+            div [ style "margin-bottom" "20px" ]
                 [ a
-                    [ style "margin-top" "20px"
-                    , style "cursor" "pointer"
+                    [ style "cursor" "pointer"
                     , href (githubSource repo)
                     ]
                     [ text "Browse Source" ]
@@ -492,7 +558,7 @@ browseSourceLink source =
 filterBox : String -> List Docs.Module -> Html Msg
 filterBox filter modules =
     input
-        [ placeholder "Filter regex"
+        [ placeholder "Filter with regex"
         , value filter
         , onInput FilterChanged
         ]
@@ -522,7 +588,7 @@ searchModule source currentPage filter m =
     else
         Just <|
             li [ class "pkg-nav-search-chunk" ]
-                [ pageLink source currentPage (Module m.name)
+                [ pageLink source currentPage (Module (pageOwner currentPage) m.name)
                 , ul [] (List.map (searchResult source m.name) results)
                 ]
 
@@ -586,7 +652,14 @@ navLinks source currentPage pages =
 
 pageLink : Source -> Page -> Page -> Html msg
 pageLink source currentPage targetPage =
-    li []
+    li
+        [ case targetPage of
+            Readme _ ->
+                style "" ""
+
+            _ ->
+                style "margin-left" "10px"
+        ]
         [ a
             [ class "pkg-nav-module"
             , href (pagePath targetPage ++ sourceQuery source)
@@ -594,10 +667,10 @@ pageLink source currentPage targetPage =
             , styleIf (currentPage == targetPage) "text-decoration" "underline"
             ]
             [ case targetPage of
-                Readme ->
+                Readme _ ->
                     text "README"
 
-                Module name ->
+                Module _ name ->
                     text name
             ]
         ]
@@ -609,7 +682,7 @@ resultLink source module_ symbol =
         [ a
             [ class "pkg-nav-module"
             , (href << String.concat) <|
-                [ pagePath (Module module_)
+                [ modulePath module_
                 , sourceQuery source
                 , "#"
                 , symbol
@@ -620,14 +693,62 @@ resultLink source module_ symbol =
         ]
 
 
+packages : Owner -> Maybe String -> Dict String Dep -> Html Msg
+packages owner maybeDefault deps =
+    let
+        default =
+            Maybe.map (mainPackage owner) maybeDefault
+                |> Maybe.withDefault Html.nothing
+
+        dependencies =
+            Dict.toList deps
+                |> List.sortBy (String.toLower << Tuple.first)
+    in
+    ul [ style "margin-top" "20px" ] <|
+        (default :: List.map (dependency owner) dependencies)
+
+
+dependency : Owner -> ( String, Dep ) -> Html Msg
+dependency owner ( name, { version, modules } ) =
+    package owner name version
+
+
+mainPackage : Owner -> String -> Html Msg
+mainPackage owner name =
+    li
+        [ styleIf (owner == Main) "font-weight" "bold"
+        , styleIf (owner == Main) "text-decoration" "underline"
+        ]
+        [ a [ onClick (OwnerChanged Main) ]
+            [ text name ]
+        ]
+
+
+package : Owner -> String -> String -> Html Msg
+package owner name version =
+    li
+        [ styleIf (Package name == owner) "font-weight" "bold"
+        , styleIf (Package name == owner) "text-decoration" "underline"
+        , style "margin-left" "10px"
+        ]
+        [ a [ onClick (OwnerChanged <| Package name) ]
+            [ text (" " ++ name ++ " " ++ version) ]
+        ]
+
+
 pagePath : Page -> String
 pagePath page_ =
     case page_ of
-        Module name ->
-            "/" ++ slugify name
+        Module _ name ->
+            "/" ++ modulePath name
 
-        Readme ->
+        Readme _ ->
             "/"
+
+
+modulePath : String -> String
+modulePath name =
+    slugify name
 
 
 styleIf : Bool -> String -> String -> Html.Attribute msg
@@ -665,7 +786,7 @@ footer =
                 [ text "open source." ]
             ]
         , text " "
-        , span [] [ text "Copyright © 2018 Rémi Lefèvre." ]
+        , span [] [ text "Copyright © 2019 Rémi Lefèvre." ]
         ]
 
 
@@ -709,6 +830,24 @@ decodeDocs docs =
             []
 
 
+decodeDeps : Decode.Value -> Dict String Dep
+decodeDeps value =
+    case Decode.decodeValue (Decode.dict depDecoder) value of
+        Ok deps ->
+            deps
+
+        Err err ->
+            Dict.empty
+
+
+depDecoder : Decoder Dep
+depDecoder =
+    Decode.map3 Dep
+        (Decode.field "version" Decode.string)
+        (Decode.field "readme" Decode.string)
+        (Decode.field "docs" <| Decode.map decodeDocs Decode.string)
+
+
 
 -- UPDATE
 
@@ -719,8 +858,14 @@ update msg model =
         Ignored _ ->
             ( model, Cmd.none )
 
+        NameUpdated name ->
+            ( { model | name = Just name }, Cmd.none )
+
         CompilationCompleted error ->
             ( setError error model, Cmd.none )
+
+        DepsUpdated deps ->
+            ( { model | deps = decodeDeps deps }, Cmd.none )
 
         OpenFilesClicked ->
             ( model, selectFiles )
@@ -762,6 +907,9 @@ update msg model =
         FilterChanged filterValue ->
             ( { model | filter = filterValue }, Cmd.none )
 
+        OwnerChanged owner ->
+            ( { model | page = Readme owner, filter = "" }, Cmd.none )
+
         LocationHrefRequested href ->
             ( model, requestLocationHref model.navKey href )
 
@@ -772,7 +920,10 @@ update msg model =
             ( model, Cmd.none )
 
         UrlChanged url ->
-            ( { model | page = urlToPage url, url = url }
+            ( { model
+                | page = urlToPage url (pageOwner model.page)
+                , url = url
+              }
             , addUrlQuery model url
             )
 
@@ -853,7 +1004,7 @@ closePreview model =
     { model
         | readme = Nothing
         , modules = []
-        , page = Readme
+        , page = Readme Main
         , source = Local
         , error = Nothing
         , filter = ""
@@ -871,17 +1022,24 @@ requestLocationHref navKey href =
             Nav.pushUrl navKey href
 
 
-urlToPage : Url -> Page
-urlToPage url =
+urlToPage : Url -> Owner -> Page
+urlToPage url owner =
     case url.path of
         "/" ->
-            Readme
+            Readme owner
 
         _ ->
-            url.path
-                |> String.dropLeft 1
-                |> unslugify
-                |> Module
+            Module owner (unslugify <| String.dropLeft 1 <| url.path)
+
+
+pageOwner : Page -> Owner
+pageOwner page_ =
+    case page_ of
+        Readme readmeOwner ->
+            readmeOwner
+
+        Module moduleOwner _ ->
+            moduleOwner
 
 
 
@@ -892,9 +1050,11 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ locationHrefRequested LocationHrefRequested
-        , compilationCompleted CompilationCompleted
+        , nameUpdated NameUpdated
+        , compilationUpdated CompilationCompleted
         , readmeUpdated ReadmeLoaded
         , docsUpdated DocsLoaded
+        , depsUpdated DepsUpdated
         ]
 
 

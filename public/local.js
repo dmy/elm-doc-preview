@@ -43,14 +43,20 @@ ws.onclose = function(event) {
 ws.onmessage = function(event) {
   var msg = JSON.parse(event.data);
   switch (msg.type) {
+    case "name":
+      app.ports.nameUpdated.send(msg.data);
+      break;
     case "compilation":
-      app.ports.compilationCompleted.send(msg.data);
+      app.ports.compilationUpdated.send(msg.data);
       break;
     case "readme":
       app.ports.readmeUpdated.send(msg.data);
       break;
     case "docs":
       app.ports.docsUpdated.send(msg.data);
+      break;
+    case "deps":
+      app.ports.depsUpdated.send(msg.data);
       break;
   }
 };
