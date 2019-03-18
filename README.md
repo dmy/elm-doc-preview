@@ -79,7 +79,7 @@ It does not support hot-reloading or dependencies documentation though.
 ```javascript
 const DocServer = require('elm-doc-preview');
 
-// constructor(path_to_elm_json = ".")
+// constructor(elm_json_dir = ".")
 const server = new DocServer();
 
 // Optionaly exit cleanly on SIGINT to let temporary files be removed
