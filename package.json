@@ -29,7 +29,7 @@
     "url": "git+https://github.com/dmy/elm-doc-preview.git"
   },
   "license": "SEE LICENSE IN LICENSE.md",
-  "description": "Elm packages documentation previewer with hot reloading.",
+  "description": "Elm offline documentation previewer with hot reloading.",
   "bugs": {
     "url": "https://github.com/dmy/elm-doc-preview/issues"
   },
@@ -47,11 +47,14 @@
   "keywords": [
     "elm",
     "package",
+    "application",
     "doc",
     "docs",
     "documentation",
+    "offline",
     "preview",
-    "previewer"
+    "previewer",
+    "viewer"
   ],
   "author": "Rémi Lefèvre <rlefevre@gmail.com>"
 }
