@@ -279,7 +279,7 @@ sourceQuery source =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "Elm Doc Preview"
+    { title = title model
     , body =
         [ div
             [ style "min-width" "100%"
@@ -295,6 +295,27 @@ view model =
             ]
         ]
     }
+
+
+title : Model -> String
+title model =
+    case model.page of
+        Module Main name ->
+            name
+
+        Module (Package pkg) _ ->
+            pkg
+
+        Readme (Package pkg) ->
+            pkg
+
+        _ ->
+            case model.name of
+                Just name ->
+                    name
+
+                _ ->
+                    "Elm Doc Preview"
 
 
 viewMain : Model -> Html Msg
