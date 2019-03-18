@@ -1,7 +1,7 @@
 # elm-doc-preview
 
-This is an Elm 0.19 documentation previewer for **packages**, **applications**
-and their **dependencies**.
+This is an Elm 0.19 **offline** documentation previewer for **packages**,
+**applications** and their **dependencies**.
 
 
 It aims at rendering documentation exactly like the
