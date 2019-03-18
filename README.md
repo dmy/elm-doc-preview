@@ -34,7 +34,7 @@ so only the `README` and dependencies are supported for those at the moment.
 $ npm install -g elm-doc-preview
 ```
 
-# Usage
+# Synopsis
 
 ```sh
 Usage: edp|elm-doc-preview [options] [path_to_package_or_application]
