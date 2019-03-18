@@ -477,7 +477,7 @@ navigation owner model =
 
           else
             search model.source model.page model.filter (pageModules owner model)
-        , packages owner model.name model.deps
+        , packages owner model.name model.filter model.deps
         ]
 
 
@@ -693,8 +693,8 @@ resultLink source module_ symbol =
         ]
 
 
-packages : Owner -> Maybe String -> Dict String Dep -> Html Msg
-packages owner maybeDefault deps =
+packages : Owner -> Maybe String -> String -> Dict String Dep -> Html Msg
+packages owner maybeDefault filter deps =
     let
         default =
             Maybe.map (mainPackage owner) maybeDefault
@@ -702,6 +702,7 @@ packages owner maybeDefault deps =
 
         dependencies =
             Dict.toList deps
+                |> List.filter (\( name, _ ) -> contains filter name)
                 |> List.sortBy (String.toLower << Tuple.first)
     in
     ul [ style "margin-top" "20px" ] <|
