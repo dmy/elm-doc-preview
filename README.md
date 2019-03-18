@@ -13,10 +13,10 @@ Note that applications documentation is
 so only the `README` and dependencies are supported for those at the moment.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/regex.png" width="400" />
-  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/elm-doc-preview.png" width="400" />
-  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/compilation.png" width="400" />
-  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/term.png" width="400" />
+  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/regex.png" width="360" />
+  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/elm-doc-preview.png" width="360" />
+  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/compilation.png" width="360" />
+  <img src="https://raw.githubusercontent.com/dmy/elm-doc-preview/master/screenshots/term.png" width="360" />
 </p>
 
 # Features
