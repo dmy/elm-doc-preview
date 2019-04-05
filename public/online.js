@@ -1,5 +1,4 @@
 var app = Elm.Main.init({
-  node: document.getElementById("elm"),
   flags: {
     readme: localStorage.getItem("readme"),
     docs: localStorage.getItem("docs"),
