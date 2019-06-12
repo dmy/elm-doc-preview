@@ -23,7 +23,7 @@ $(css): $(css_files)
 	cat $^ | npx csso -o $@
 
 minify:
-	npx elm-minify $(elm_js) --replace
+	npx elm-minify $(elm_js) --overwrite
 
 watch:
 	npx elm-live $(main) -d public -u -- --output=$(elm_js) --debug
