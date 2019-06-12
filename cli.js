@@ -38,11 +38,15 @@ function init() {
  * Check if a newer version is available
  */
 function checkUpdate(currentVersion) {
-  latestVersion("elm-doc-preview").then(lastVersion => {
-    if (lastVersion !== currentVersion) {
-      console.log(chalk.yellow(`elm-doc-preview ${lastVersion} is available`));
-    }
-  });
+  latestVersion("elm-doc-preview")
+    .then(lastVersion => {
+      if (lastVersion !== currentVersion) {
+        console.log(
+          chalk.yellow(`elm-doc-preview ${lastVersion} is available`)
+        );
+      }
+    })
+    .catch(() => {});
 }
 
 /*
