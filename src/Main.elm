@@ -947,7 +947,9 @@ update msg model =
             ( { model | filter = "" }, scrollToFragment model.url )
 
         OwnerChanged owner ->
-            ( { model | page = Readme owner, filter = "" }, Cmd.none )
+            ( { model | page = Readme owner, filter = "" }
+            , requestLocationHref model.navKey "/"
+            )
 
         LocationHrefRequested href ->
             ( model, requestLocationHref model.navKey href )
