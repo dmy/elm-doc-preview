@@ -14,11 +14,11 @@ import File.Select as Select
 import Html exposing (Html, a, div, h1, input, li, span, text, ul)
 import Html.Attributes exposing (class, href, id, placeholder, style, title, value)
 import Html.Events exposing (on, onClick, onInput, preventDefaultOn)
-import Html.Extra as Html exposing (viewIf)
+import Html.Extra exposing (viewIf)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Markdown
-import Maybe.Extra as Maybe
+import Maybe.Extra
 import Online
 import Regex
 import Svg exposing (svg)
@@ -205,7 +205,7 @@ focusOpenFilesLink =
 urlToSource : Url -> Source
 urlToSource url =
     Url.Parser.parse repoParser { url | path = "" }
-        |> Maybe.join
+        |> Maybe.Extra.join
         |> Maybe.map (Remote Loading)
         |> Maybe.withDefault Local
 
@@ -321,6 +321,10 @@ title model =
 
 viewMain : Model -> Html Msg
 viewMain model =
+    let
+        owner =
+            pageOwner model.page
+    in
     div
         [ class "center"
         , style "flex" "1"
@@ -328,16 +332,17 @@ viewMain model =
         , style "display" "flex"
         , style "align-items" "flex-end"
         ]
-        [ case ( model.error, isLoading model ) of
-            ( Just error, _ ) ->
-                compilationError error
+        [ if isLoading model then
+            spinner
 
-            ( Nothing, True ) ->
-                spinner
+          else
+            case ( model.error, pageOwner model.page ) of
+                ( Just error, Main ) ->
+                    compilationError error
 
-            _ ->
-                page model
-        , navigation (pageOwner model.page) model
+                _ ->
+                    page model
+        , navigation owner model
         ]
 
 
@@ -549,7 +554,7 @@ openLink =
 closeLink : Model -> Html Msg
 closeLink model =
     if model.readme == Nothing && model.modules == [] then
-        Html.nothing
+        Html.Extra.nothing
 
     else
         div [ style "margin-bottom" "10px" ]
@@ -566,7 +571,7 @@ browseSourceLink : Source -> Html Msg
 browseSourceLink source =
     case source of
         Local ->
-            Html.nothing
+            Html.Extra.nothing
 
         Remote _ repo ->
             div [ style "margin-bottom" "20px" ]
@@ -733,7 +738,7 @@ packages owner maybeDefault filter deps =
     let
         default =
             Maybe.map (mainPackage owner) maybeDefault
-                |> Maybe.withDefault Html.nothing
+                |> Maybe.withDefault Html.Extra.nothing
 
         dependencies =
             Dict.toList deps
