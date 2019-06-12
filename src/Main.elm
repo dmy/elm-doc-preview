@@ -86,6 +86,7 @@ type Msg
     | ReadmeLoaded String
     | ReadmeRequestCompleted (Result Http.Error String)
     | FilterChanged String
+    | FilterCleared
     | OwnerChanged Owner
     | LocationHrefRequested String
     | UrlRequested UrlRequest
@@ -487,7 +488,8 @@ navigation owner model =
             openLink
         , viewIf model.online <|
             closeLink model
-        , filterBox model.filter model.modules
+        , viewIf (not <| Dict.isEmpty model.deps && List.isEmpty model.modules) <|
+            filterBox model.filter
         , viewIf (model.readme /= Nothing) <|
             navLinks model.source model.page [ Readme owner ]
         , browseSourceLink model.source
@@ -576,14 +578,26 @@ browseSourceLink source =
                 ]
 
 
-filterBox : String -> List Docs.Module -> Html Msg
-filterBox filter modules =
-    input
-        [ placeholder "Filter with regex"
-        , value filter
-        , onInput FilterChanged
+filterBox : String -> Html Msg
+filterBox filter =
+    div []
+        [ input
+            [ placeholder "Filter with regex"
+            , value filter
+            , onInput FilterChanged
+            , style "padding-right" "28px"
+            ]
+            []
+        , viewIf (not <| String.isEmpty filter) <|
+            span
+                [ style "display" "inline-block"
+                , style "transform" "translateX(-24px)"
+                , style "font-size" "18px"
+                , style "cursor" "pointer"
+                , onClick FilterCleared
+                ]
+                [ text "x" ]
         ]
-        []
 
 
 search : Source -> Page -> String -> List Docs.Module -> Html Msg
@@ -927,7 +941,10 @@ update msg model =
             ( setReadme Nothing model, Cmd.none )
 
         FilterChanged filterValue ->
-            ( { model | filter = filterValue }, Cmd.none )
+            ( { model | filter = filterValue }, scrollToTop )
+
+        FilterCleared ->
+            ( { model | filter = "" }, scrollToFragment model.url )
 
         OwnerChanged owner ->
             ( { model | page = Readme owner, filter = "" }, Cmd.none )
@@ -1018,7 +1035,13 @@ scrollToFragment url =
                 |> Task.attempt (\_ -> Ignored "scroll")
 
         Nothing ->
-            Cmd.none
+            scrollToTop
+
+
+scrollToTop : Cmd Msg
+scrollToTop =
+    Dom.setViewport 0 0
+        |> Task.attempt (\_ -> Ignored "scroll")
 
 
 closePreview : Model -> Model
