@@ -599,6 +599,7 @@ filterBox filter =
                 , style "transform" "translateX(-24px)"
                 , style "font-size" "18px"
                 , style "cursor" "pointer"
+                , style "color" "#888888"
                 , onClick FilterCleared
                 ]
                 [ text "x" ]
