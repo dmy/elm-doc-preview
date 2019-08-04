@@ -28,7 +28,9 @@ document.addEventListener("click", function(e) {
   }
   if (target instanceof HTMLAnchorElement) {
     var href = target.getAttribute("href");
-    app.ports.locationHrefRequested.send(href);
+    if (href) {
+      app.ports.locationHrefRequested.send(href);
+    }
   }
 });
 
