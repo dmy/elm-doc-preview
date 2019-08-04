@@ -16,9 +16,9 @@
     "csso-cli": "^2.0.2",
     "elm": "^0.19.0-no-deps",
     "elm-minify": "^2.0.4",
-    "eslint": "^5.16.0",
+    "eslint": "^6.1.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-config-prettier": "^4.3.0",
+    "eslint-config-prettier": "^6.0.0",
     "npx": "^10.2.0"
   },
   "engines": {
