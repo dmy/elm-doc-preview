@@ -1,4 +1,4 @@
-module Block exposing
+module Page.Docs.Block exposing
     ( Info
     , makeInfo
     , view
@@ -8,15 +8,10 @@ import Dict
 import Elm.Docs as Docs
 import Elm.Type as Type
 import Elm.Version as V
+import Href
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Extra exposing (nothing)
-import Regex
 import Utils.Markdown as Markdown
-
-
-type alias Block r =
-    { r | name : String }
 
 
 
@@ -32,47 +27,33 @@ maxWidth =
 -- VIEW
 
 
-view : String -> Info -> Docs.Block -> Html msg
-view filter info block =
+view : Info -> Docs.Block -> Html msg
+view info block =
     case block of
         Docs.MarkdownBlock markdown ->
-            if String.isEmpty filter then
-                span [ class "markdown-block" ] [ Markdown.block markdown ]
-
-            else
-                nothing
+            span [ class "markdown-block" ] [ Markdown.block markdown ]
 
         Docs.ValueBlock value ->
-            viewFilteredBy filter value (viewValue info)
+            viewValue info value
 
         Docs.BinopBlock binop ->
-            viewFilteredBy filter binop (viewBinop info)
+            viewBinop info binop
 
         Docs.AliasBlock alias ->
-            viewFilteredBy filter alias (viewAlias info)
+            viewAlias info alias
 
         Docs.UnionBlock union ->
-            viewFilteredBy filter union (viewUnion info)
+            viewUnion info union
 
         Docs.UnknownBlock name ->
-            nothing
-
-
-viewFilteredBy : String -> Block r -> (Block r -> Html msg) -> Html msg
-viewFilteredBy filter record viewer =
-    if contains filter record.name then
-        viewer record
-
-    else
-        nothing
-
-
-contains : String -> String -> Bool
-contains pattern str =
-    pattern
-        |> Regex.fromStringWith { caseInsensitive = True, multiline = False }
-        |> Maybe.map (\regex -> Regex.contains regex str)
-        |> Maybe.withDefault False
+            span
+                [ class "TODO-make-this-red" ]
+                [ text "It seems that "
+                , code [] [ text name ]
+                , text " does not have any docs. Please open a bug report "
+                , a [ href "https://github.com/elm/package.elm-lang.org/issues" ] [ text "here" ]
+                , text " with the title “UnknownBlock found in docs” and with a link to this page in the description."
+                ]
 
 
 viewCodeBlock : String -> String -> List (Line msg) -> Html msg
@@ -194,9 +175,11 @@ unionMore info =
 
 
 type alias Info =
-    { moduleName : String
+    { author : String
+    , project : String
+    , version : Maybe V.Version
+    , moduleName : String
     , typeNameDict : TypeNameDict
-    , query : String
     }
 
 
@@ -204,8 +187,8 @@ type alias TypeNameDict =
     Dict.Dict String ( String, String )
 
 
-makeInfo : String -> List Docs.Module -> String -> Info
-makeInfo moduleName docsList query =
+makeInfo : String -> String -> Maybe V.Version -> String -> List Docs.Module -> Info
+makeInfo author project version moduleName docsList =
     let
         addUnion home union docs =
             Dict.insert (home ++ "." ++ union.name) ( home, union.name ) docs
@@ -213,7 +196,8 @@ makeInfo moduleName docsList query =
         addModule docs dict =
             List.foldl (addUnion docs.name) dict docs.unions
     in
-    Info moduleName (List.foldl addModule Dict.empty docsList) query
+    Info author project version moduleName <|
+        List.foldl addModule Dict.empty docsList
 
 
 
@@ -231,10 +215,10 @@ bold =
 
 
 makeLink : Info -> List (Attribute msg) -> String -> String -> Html msg
-makeLink { moduleName, query } attrs tagName humanName =
+makeLink { author, project, version, moduleName } attrs tagName humanName =
     let
         url =
-            "/" ++ moduleName ++ query ++ "#" ++ tagName
+            Href.toModule author project version moduleName (Just tagName)
     in
     a (href url :: attrs) [ text humanName ]
 

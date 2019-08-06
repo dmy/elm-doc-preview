@@ -1,0 +1,389 @@
+/* source-sans-pro-regular - latin */
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Source Sans Pro Regular'), local('SourceSansPro-Regular'),
+       url('/fonts/source-sans-pro-v13-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/fonts/source-sans-pro-v13-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+/* source-sans-pro-italic - latin */
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-weight: 400;
+  src: local('Source Sans Pro Italic'), local('SourceSansPro-Italic'),
+       url('/fonts/source-sans-pro-v13-latin-italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/fonts/source-sans-pro-v13-latin-italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+/* source-sans-pro-700 - latin */
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Source Sans Pro Bold'), local('SourceSansPro-Bold'),
+       url('/fonts/source-sans-pro-v13-latin-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/fonts/source-sans-pro-v13-latin-700.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+/* source-sans-pro-700italic - latin */
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: italic;
+  font-weight: 700;
+  src: local('Source Sans Pro Bold Italic'), local('SourceSansPro-BoldItalic'),
+       url('/fonts/source-sans-pro-v13-latin-700italic.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/fonts/source-sans-pro-v13-latin-700italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+/* source-code-pro-regular - latin */
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Source Code Pro'), local('SourceCodePro-Regular'),
+       url('/fonts/source-code-pro-v10-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/fonts/source-code-pro-v10-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+/* source-code-pro-700 - latin */
+@font-face {
+  font-family: 'Source Code Pro';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Source Code Pro Bold'), local('SourceCodePro-Bold'),
+       url('/fonts/source-code-pro-v10-latin-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+       url('/fonts/source-code-pro-v10-latin-700.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+html,
+head,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: "Source Sans Pro", "Trebuchet MS", "Lucida Grande",
+    "Bitstream Vera Sans", "Helvetica Neue", sans-serif;
+  color: #293c4b;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: normal;
+}
+
+p,
+li {
+  line-height: 1.5em;
+}
+
+a {
+  color: #1184ce;
+  text-decoration: none;
+}
+a:hover {
+  color: rgb(234, 21, 122);
+  text-decoration: underline;
+}
+a .light {
+  color: #5fabdc;
+}
+a:hover .light {
+  color: rgb(234, 21, 122);
+}
+
+pre {
+  margin: 0;
+  padding: 10px;
+  background-color: rgb(254, 254, 254);
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgb(245, 245, 245);
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+/* HOME */
+
+.home-summaries ul {
+  list-style-type: none;
+  padding-left: 1em;
+}
+
+/* HEADER */
+
+.center {
+  width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.header {
+  display: flex;
+  padding: 10px 0;
+  color: #333333;
+  font-size: 24px;
+  margin: 0;
+  text-overflow: ellipsis;
+}
+
+.header > a:first-of-type {
+  margin-right: 20px;
+}
+
+.header a:hover {
+  color: #333333;
+}
+
+.header-underbar {
+  background-color: #60b5cc;
+  margin: 0;
+  padding: 1px 0;
+}
+
+.version-warning {
+  text-align: center;
+  margin: 0;
+  padding: 4px 0;
+  color: white;
+}
+
+.version-warning a {
+  color: white;
+  text-decoration: underline;
+}
+
+.spacey-char {
+  margin: 0 10px;
+}
+
+/* FOOTER */
+
+.footer {
+  text-align: center;
+  margin-top: 4em;
+  border-top: 1px solid #eeeeee;
+  padding: 2em 0;
+  color: #bbbbbb;
+}
+
+.grey-link {
+  color: #bbbbbb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.grey-link:hover {
+  color: #bbbbbb;
+}
+
+/* DOCUMENTATION */
+
+.block-list {
+  width: 600px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.block-list-title {
+  font-size: 3em;
+}
+
+.markdown-block h1 {
+  margin-top: 2em;
+  margin-bottom: 0.5px;
+}
+
+.docs-block {
+  border-top: 1px solid #eeeeee;
+  margin-top: 1em;
+  margin-bottom: 2em;
+}
+
+.docs-header {
+  white-space: pre;
+  font-family: "Source Code Pro", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.docs-comment {
+  overflow: hidden;
+  padding-left: 36px;
+}
+
+.docs-comment img {
+  max-width: 500px;
+}
+
+/* PACKAGE NAVIGATION */
+
+.pkg-nav {
+  width: 200px;
+  display: inline-block;
+  position: sticky;
+  top: 0;
+  vertical-align: top;
+  padding: 20px;
+  margin: 20px 20px 20px 40px;
+  border-left: 1px solid #eeeeee;
+}
+
+.pkg-nav h2 {
+  margin-bottom: 10px;
+}
+
+.pkg-nav input {
+  width: 200px;
+  font-size: 1em;
+  padding: 4px;
+  margin: 10px 0;
+  border: 1px solid #eeeeee;
+  border-radius: 6px;
+}
+
+.pkg-nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pkg-nav ul ul {
+  list-style-type: none;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.pkg-nav-module {
+  font-family: "Source Code Pro", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+  text-overflow: ellipsis;
+}
+
+.pkg-nav-value {
+  font-family: "Source Code Pro", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+  text-overflow: ellipsis;
+}
+
+.pkg-nav-search-chunk {
+  padding-bottom: 10px;
+}
+
+.pkg-nav pre {
+  width: 200px;
+  padding: 8px 4px;
+}
+
+.pkg-nav pre:active {
+  background-color: #5fabdc;
+  color: white;
+}
+
+/* CATALOG */
+
+.catalog {
+  width: 600px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.catalog input {
+  width: 578px;
+  font-size: 1.5em;
+  padding: 10px;
+  outline: none;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  margin-top: 40px;
+  margin-bottom: 10px;
+}
+
+.pkg-hint {
+  padding: 20px;
+  background-color: #fcfcfc;
+  border-radius: 8px;
+}
+
+.pkg-summary {
+  padding: 20px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.pkg-summary h1 {
+  margin: 0;
+  font-size: 1.5em;
+  display: inline-block;
+}
+
+.pkg-summary-desc {
+  margin: 0.5em 0;
+}
+
+.pkg-summary-hints {
+  float: right;
+  font-size: 1em;
+  padding-top: 0.5em;
+  color: #bbbbbb;
+}
+
+.pkg-summary-hints a {
+  color: #bbbbbb;
+}
+
+/* CATALOG SIDEBAR */
+
+.catalog-sidebar {
+  width: 200px;
+  display: inline-block;
+  vertical-align: top;
+  padding: 20px;
+  margin: 20px 20px 20px 40px;
+  border-left: 1px solid #eeeeee;
+}
+
+.catalog-sidebar h2 {
+  font-size: 1.5em;
+  padding: 10px;
+  margin: 0;
+}
+
+.catalog-sidebar ul {
+  list-style-type: none;
+  margin: 0;
+  padding-left: 20px;
+  padding-bottom: 10px;
+}
+
+/* CODE */
+
+code {
+  font-family: "Source Code Pro", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+}
+
+/* I heard using :not() is slow for reflows.
+Not really any of those on the website though AFAIK.
+*/
+:not(pre) > code {
+  padding: 0;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 3px;
+}
+
+:not(pre) > code::before,
+:not(pre) > code::after {
+  letter-spacing: -0.2em;
+  content: "\00a0";
+}
