@@ -1,12 +1,16 @@
 module Page.Search exposing
-    ( Model
-    , Msg
-    , init
-    , update
-    , view
+    ( Model, Msg
+    , init, update, view
     )
 
-import Dict
+{-|
+
+@docs Model, Msg
+@docs init, update, view
+
+-}
+
+import Dict exposing (Dict)
 import Elm.Version as V
 import Href
 import Html exposing (..)
@@ -27,33 +31,39 @@ import Url.Builder as Url
 -- MODEL
 
 
+{-| -}
 type alias Model =
     { session : Session.Data
     , query : String
     , entries : Entries
+    , preview : Maybe Session.Preview
     }
 
 
 type Entries
     = Failure
     | Loading
-    | Success (List Entry.Entry)
+    | Success (Dict String Entry.Entry)
 
 
+{-| -}
 init : Session.Data -> ( Model, Cmd Msg )
 init session =
     case Session.getEntries session of
         Just entries ->
-            ( Model session "" (Success (Dict.values entries))
+            ( Model session "" (Success entries) (Session.getPreview session)
             , Cmd.none
             )
 
         Nothing ->
-            ( Model session "" Loading
-            , Http.get
-                { url = "/search.json"
-                , expect = Http.expectJson GotPackages (Decode.list Entry.decoder)
-                }
+            ( Model session "" Loading Nothing
+            , Cmd.batch
+                [ Session.fetchPreview GotPreview
+                , Http.get
+                    { url = "/search.json"
+                    , expect = Http.expectJson GotPackages (Decode.list Entry.decoder)
+                    }
+                ]
             )
 
 
@@ -61,11 +71,14 @@ init session =
 -- UPDATE
 
 
+{-| -}
 type Msg
     = QueryChanged String
     | GotPackages (Result Http.Error (List Entry.Entry))
+    | GotPreview (Result Http.Error Session.Preview)
 
 
+{-| -}
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
@@ -89,17 +102,31 @@ update msg model =
                                 |> Dict.fromList
                     in
                     ( { model
-                        | entries = Success entries
+                        | entries = Success dict
                         , session = Session.addEntries dict model.session
                       }
                     , Cmd.none
                     )
+
+        GotPreview result ->
+            case result of
+                Ok preview ->
+                    ( { model
+                        | preview = Just preview
+                        , session = Session.addPreview preview model.session
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( { model | preview = Nothing }, Cmd.none )
 
 
 
 -- VIEW
 
 
+{-| -}
 view : Model -> Skeleton.Details Msg
 view model =
     { title = "Elm Packages"
@@ -108,7 +135,7 @@ view model =
     , attrs = []
     , kids =
         [ lazy2 viewSearch model.query model.entries
-        , lazy viewSidebar model.entries
+        , lazy2 viewSidebar model.preview model.entries
         ]
     }
 
@@ -136,8 +163,15 @@ viewSearch query entries =
 
             -- TODO
             Success es ->
-                Keyed.node "div" [] <|
-                    List.map viewEntry (Entry.search query es)
+                let
+                    results =
+                        List.map viewEntry (Entry.search query es)
+                in
+                div []
+                    [ Keyed.node "div" [] <|
+                        ( "h", viewHint (List.isEmpty results) query )
+                            :: results
+                    ]
         ]
 
 
@@ -197,12 +231,13 @@ viewExactVersions entry =
 -- VIEW SIDEBAR
 
 
-viewSidebar : Entries -> Html msg
-viewSidebar entries =
+viewSidebar : Maybe Session.Preview -> Entries -> Html msg
+viewSidebar preview entries =
     case entries of
         Success es ->
             div [ class "catalog-sidebar" ]
-                [ h2 [] [ text "Popular Packages" ]
+                [ viewPreview preview
+                , h2 [] [ text "Popular Packages" ]
                 , ul [] <|
                     List.map viewPopularPackage <|
                         List.filter (isInstalled es)
@@ -213,14 +248,26 @@ viewSidebar entries =
             text ""
 
 
-isInstalled : List Entry.Entry -> String -> Bool
-isInstalled entries project =
-    case List.filter (\e -> e.author == "elm" && e.project == project) entries of
-        [] ->
-            False
+viewPreview : Maybe Session.Preview -> Html msg
+viewPreview maybePreview =
+    case maybePreview of
+        Just preview ->
+            div []
+                [ h2 [] [ text "Project" ]
+                , ul []
+                    [ li []
+                        [ a
+                            [ href (Url.absolute [ "packages", preview.name, preview.version ] [])
+                            ]
+                            [ span [ style "white-space" "nowrap" ]
+                                [ text preview.name ]
+                            ]
+                        ]
+                    ]
+                ]
 
-        _ ->
-            True
+        Nothing ->
+            text ""
 
 
 viewPopularPackage : String -> Html msg
@@ -233,6 +280,11 @@ viewPopularPackage project =
             , text project
             ]
         ]
+
+
+isInstalled : Dict String Entry.Entry -> String -> Bool
+isInstalled entries project =
+    Dict.member ("elm/" ++ project) entries
 
 
 

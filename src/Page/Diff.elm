@@ -1,10 +1,14 @@
 module Page.Diff exposing
-    ( Model
-    , Msg
-    , init
-    , update
-    , view
+    ( Model, Msg
+    , init, update, view
     )
+
+{-|
+
+@docs Model, Msg
+@docs init, update, view
+
+-}
 
 import Elm.Version as V
 import Href
@@ -18,15 +22,14 @@ import Release
 import Session
 import Skeleton
 import Time
-import Url.Builder as Url
-import Utils.Markdown as Markdown
-import Utils.OneOrMore as OneOrMore exposing (OneOrMore(..))
+import Utils.OneOrMore exposing (OneOrMore(..))
 
 
 
 -- MODEL
 
 
+{-| -}
 type alias Model =
     { session : Session.Data
     , author : String
@@ -41,6 +44,7 @@ type Releases
     | Success (OneOrMore Release.Release)
 
 
+{-| -}
 init : Session.Data -> String -> String -> ( Model, Cmd Msg )
 init session author project =
     case Session.getReleases session author project of
@@ -59,10 +63,12 @@ init session author project =
 -- UPDATE
 
 
+{-| -}
 type Msg
     = GotReleases (Result Http.Error (OneOrMore Release.Release))
 
 
+{-| -}
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
@@ -86,6 +92,7 @@ update msg model =
 -- VIEW
 
 
+{-| -}
 view : Model -> Skeleton.Details msg
 view model =
     { title = model.author ++ "/" ++ model.project

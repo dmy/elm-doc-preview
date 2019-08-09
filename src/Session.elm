@@ -1,29 +1,29 @@
 module Session exposing
-    ( Data
-    , addDocs
-    , addEntries
-    , addManifest
-    , addReadme
-    , addReleases
-    , empty
-    , fetchDocs
-    , fetchManifest
-    , fetchReadme
-    , fetchReleases
-    , getDocs
-    , getEntries
-    , getManifest
-    , getReadme
-    , getReleases
+    ( Data, Docs(..), Preview, empty
+    , addDocs, addEntries, addManifest, addReadme, addReleases, addPreview
+    , fetchDocs, fetchManifest, fetchReadme, fetchReleases, fetchPreview
+    , getDocs, getEntries, getManifest, getReadme, getReleases, getPreview
+    , docsDecoder
     )
+
+{-|
+
+@docs Data, Docs, Preview, empty
+@docs addDocs, addEntries, addManifest, addReadme, addReleases, addPreview
+@docs fetchDocs, fetchManifest, fetchReadme, fetchReleases, fetchPreview
+@docs getDocs, getEntries, getManifest, getReadme, getReleases, getPreview
+@docs docsDecoder
+
+-}
 
 import Dict exposing (Dict)
 import Elm.Docs as Docs
+import Elm.Error exposing (Error)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as V
 import Http
 import Imf.DateTime
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Page.Search.Entry as Entry
 import Parser
 import Release exposing (Release)
@@ -36,29 +36,85 @@ import Utils.OneOrMore exposing (OneOrMore(..))
 -- SESSION DATA
 
 
+{-| -}
 type alias Data =
     { entries : Maybe (Dict String Entry.Entry)
     , releases : Dict.Dict String (OneOrMore Release.Release)
     , readmes : Dict.Dict String String
-    , docs : Dict.Dict String (List Docs.Module)
+    , docs : Dict.Dict String Docs
     , manifests : Dict.Dict String ( Time.Posix, Project )
+    , preview : Maybe Preview
     }
 
 
+{-| -}
+type Docs
+    = Error Error
+    | Modules (List Docs.Module)
+
+
+{-| -}
+type alias Preview =
+    { name : String
+    , version : String
+    }
+
+
+{-| -}
 empty : Data
 empty =
-    Data Nothing Dict.empty Dict.empty Dict.empty Dict.empty
+    { entries = Nothing
+    , releases = Dict.empty
+    , readmes = Dict.empty
+    , docs = Dict.empty
+    , manifests = Dict.empty
+    , preview = Nothing
+    }
+
+
+
+-- PREVIEW
+
+
+{-| -}
+getPreview : Data -> Maybe Preview
+getPreview data =
+    data.preview
+
+
+{-| -}
+addPreview : Preview -> Data -> Data
+addPreview preview data =
+    { data | preview = Just preview }
+
+
+{-| -}
+fetchPreview : (Result Http.Error Preview -> msg) -> Cmd msg
+fetchPreview toMsg =
+    Http.get
+        { url = Url.absolute [ "preview" ] []
+        , expect = Http.expectJson toMsg previewDecoder
+        }
+
+
+previewDecoder : Decoder Preview
+previewDecoder =
+    Decode.map2 Preview
+        (Decode.field "name" Decode.string)
+        (Decode.field "version" Decode.string)
 
 
 
 -- ENTRIES
 
 
+{-| -}
 getEntries : Data -> Maybe (Dict String Entry.Entry)
 getEntries data =
     data.entries
 
 
+{-| -}
 addEntries : Dict String Entry.Entry -> Data -> Data
 addEntries entries data =
     { data | entries = Just entries }
@@ -68,16 +124,19 @@ addEntries entries data =
 -- RELEASES
 
 
+{-| -}
 toPkgKey : String -> String -> String
 toPkgKey author project =
     author ++ "/" ++ project
 
 
+{-| -}
 getReleases : Data -> String -> String -> Maybe (OneOrMore Release)
 getReleases data author project =
     Dict.get (toPkgKey author project) data.releases
 
 
+{-| -}
 addReleases : String -> String -> OneOrMore Release -> Data -> Data
 addReleases author project releases data =
     let
@@ -87,6 +146,7 @@ addReleases author project releases data =
     { data | releases = newReleases }
 
 
+{-| -}
 fetchReleases : (Result Http.Error (OneOrMore Release) -> msg) -> String -> String -> Cmd msg
 fetchReleases toMsg author project =
     Http.get
@@ -99,16 +159,19 @@ fetchReleases toMsg author project =
 -- README
 
 
+{-| -}
 toVsnKey : String -> String -> V.Version -> String
 toVsnKey author project version =
     author ++ "/" ++ project ++ "@" ++ V.toString version
 
 
+{-| -}
 getReadme : Data -> String -> String -> V.Version -> Maybe String
 getReadme data author project version =
     Dict.get (toVsnKey author project version) data.readmes
 
 
+{-| -}
 addReadme : String -> String -> V.Version -> String -> Data -> Data
 addReadme author project version readme data =
     let
@@ -118,6 +181,7 @@ addReadme author project version readme data =
     { data | readmes = newReadmes }
 
 
+{-| -}
 fetchReadme : (Result Http.Error String -> msg) -> String -> String -> V.Version -> Cmd msg
 fetchReadme toMsg author project version =
     Http.get
@@ -130,12 +194,14 @@ fetchReadme toMsg author project version =
 -- DOCS
 
 
-getDocs : Data -> String -> String -> V.Version -> Maybe (List Docs.Module)
+{-| -}
+getDocs : Data -> String -> String -> V.Version -> Maybe Docs
 getDocs data author project version =
     Dict.get (toVsnKey author project version) data.docs
 
 
-addDocs : String -> String -> V.Version -> List Docs.Module -> Data -> Data
+{-| -}
+addDocs : String -> String -> V.Version -> Docs -> Data -> Data
 addDocs author project version docs data =
     let
         newDocs =
@@ -144,23 +210,35 @@ addDocs author project version docs data =
     { data | docs = newDocs }
 
 
-fetchDocs : (Result Http.Error (List Docs.Module) -> msg) -> String -> String -> V.Version -> Cmd msg
+{-| -}
+fetchDocs : (Result Http.Error Docs -> msg) -> String -> String -> V.Version -> Cmd msg
 fetchDocs toMsg author project version =
     Http.get
         { url = Url.absolute [ "packages", author, project, V.toString version, "docs.json" ] []
-        , expect = Http.expectJson toMsg (Decode.list Docs.decoder)
+        , expect = Http.expectJson toMsg docsDecoder
         }
+
+
+{-| -}
+docsDecoder : Decoder Docs
+docsDecoder =
+    Decode.oneOf
+        [ Decode.map Modules (Decode.list Docs.decoder)
+        , Decode.map Error Elm.Error.decoder
+        ]
 
 
 
 -- MANIFEST
 
 
+{-| -}
 getManifest : Data -> String -> String -> V.Version -> Maybe ( Time.Posix, Project )
 getManifest data author project version =
     Dict.get (toVsnKey author project version) data.manifests
 
 
+{-| -}
 addManifest : String -> String -> V.Version -> ( Time.Posix, Project ) -> Data -> Data
 addManifest author project version manifest data =
     let
@@ -170,6 +248,7 @@ addManifest author project version manifest data =
     { data | manifests = newManifests }
 
 
+{-| -}
 fetchManifest :
     (Result Http.Error ( Time.Posix, Project ) -> msg)
     -> String
@@ -221,8 +300,8 @@ expectProjectHelp metadata body =
         ( Ok time, Ok value ) ->
             Ok ( time, value )
 
+        ( Err deadEnds, Ok value ) ->
+            Ok ( Time.millisToPosix 0, value )
+
         ( _, Err err ) ->
             Err (Http.BadBody (Decode.errorToString err))
-
-        ( Err deadEnds, _ ) ->
-            Err (Http.BadBody (Parser.deadEndsToString deadEnds))

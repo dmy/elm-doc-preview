@@ -21,7 +21,8 @@ function init() {
         pkgPath = dir;
       }
     })
-    .option("-p, --port <port>", "the server listening port", Math.floor, 8000);
+    .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
+    .option("-n, --no-browser", "do not open in browser when server starts");
 
   program.on("--help", () => {
     console.log("");
@@ -46,7 +47,7 @@ function checkUpdate(currentVersion) {
         );
       }
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 /*
@@ -58,9 +59,7 @@ checkUpdate(npmPackage.version);
 const docServer = new DocServer(program.dir);
 
 process
-  .on("SIGINT", () => {
-    process.exit(0);
-  })
+  .on("SIGINT", () => process.exit(0))
   .on("uncaughtException", e => {
     if (e.errno === "EADDRINUSE") {
       console.log(
@@ -72,4 +71,4 @@ process
     process.exit(1);
   });
 
-docServer.listen(program.port);
+docServer.listen(program.port, program.browser);

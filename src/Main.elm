@@ -1,16 +1,25 @@
 module Main exposing (main)
 
+{-|
+
+@docs main
+
+-}
+
 import Browser
 import Browser.Navigation as Nav
-import Dict
-import Elm.Version as V
-import Html
+import Elm.Project as Project exposing (Project)
+import Elm.Version as Version exposing (Version)
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Page.Diff as Diff
-import Page.Package as Package
+import Page.Docs as Docs
 import Page.Problem as Problem
 import Page.Search as Search
+import Ports
 import Session
 import Skeleton
+import Time
 import Url
 import Url.Parser as Parser exposing ((</>), Parser, custom, fragment, map, oneOf, s, top)
 
@@ -19,6 +28,8 @@ import Url.Parser as Parser exposing ((</>), Parser, custom, fragment, map, oneO
 -- MAIN
 
 
+{-| -}
+main : Program () Model Msg
 main =
     Browser.application
         { init = init
@@ -43,7 +54,7 @@ type alias Model =
 type Page
     = NotFound Session.Data
     | Search Search.Model
-    | Package Package.Model
+    | Docs Docs.Model
     | Diff Diff.Model
 
 
@@ -53,7 +64,11 @@ type Page
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Ports.onReadme OnReadme
+        , Ports.onDocs OnDocs
+        , Ports.onManifest OnManifest
+        ]
 
 
 
@@ -75,8 +90,8 @@ view model =
         Search search ->
             Skeleton.view SearchMsg (Search.view search)
 
-        Package pkg ->
-            Skeleton.view PackageMsg (Package.view pkg)
+        Docs docs ->
+            Skeleton.view DocsMsg (Docs.view docs)
 
         Diff diff ->
             Skeleton.view never (Diff.view diff)
@@ -99,20 +114,19 @@ init _ url key =
 
 
 type Msg
-    = NoOp
-    | LinkClicked Browser.UrlRequest
+    = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | SearchMsg Search.Msg
     | DiffMsg Diff.Msg
-    | PackageMsg Package.Msg
+    | DocsMsg Docs.Msg
+    | OnReadme Ports.Readme
+    | OnDocs Ports.Docs
+    | OnManifest Ports.Manifest
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        NoOp ->
-            ( model, Cmd.none )
-
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
@@ -148,13 +162,22 @@ update message model =
                 _ ->
                     ( model, Cmd.none )
 
-        PackageMsg msg ->
+        DocsMsg msg ->
             case model.page of
-                Package pkg ->
-                    stepPackage model (Package.update msg pkg)
+                Docs docs ->
+                    stepDocs model (Docs.update msg docs)
 
                 _ ->
                     ( model, Cmd.none )
+
+        OnReadme readme ->
+            ( updateReadme readme model, Cmd.none )
+
+        OnDocs docs ->
+            ( updateDocs docs model, Cmd.none )
+
+        OnManifest manifest ->
+            ( updateManifest manifest model, Cmd.none )
 
 
 stepSearch : Model -> ( Search.Model, Cmd Search.Msg ) -> ( Model, Cmd Msg )
@@ -164,10 +187,10 @@ stepSearch model ( search, cmds ) =
     )
 
 
-stepPackage : Model -> ( Package.Model, Cmd Package.Msg ) -> ( Model, Cmd Msg )
-stepPackage model ( pkg, cmds ) =
-    ( { model | page = Package pkg }
-    , Cmd.map PackageMsg cmds
+stepDocs : Model -> ( Docs.Model, Cmd Docs.Msg ) -> ( Model, Cmd Msg )
+stepDocs model ( docs, cmds ) =
+    ( { model | page = Docs docs }
+    , Cmd.map DocsMsg cmds
     )
 
 
@@ -176,6 +199,112 @@ stepDiff model ( diff, cmds ) =
     ( { model | page = Diff diff }
     , Cmd.map DiffMsg cmds
     )
+
+
+
+-- WEBSOCKET UPDATES
+
+
+updateReadme : Ports.Readme -> Model -> Model
+updateReadme { author, project, version, readme } model =
+    case Version.fromString version of
+        Just v ->
+            updatePageReadme author project v readme model
+
+        Nothing ->
+            model
+
+
+updatePageReadme : String -> String -> Version -> String -> Model -> Model
+updatePageReadme author project version readme model =
+    let
+        newSession =
+            Session.addReadme author project version readme (exit model)
+
+        newPage =
+            case model.page of
+                Docs m ->
+                    Docs (Docs.updateReadme author project version readme m)
+
+                _ ->
+                    setPageSession newSession model.page
+    in
+    { model | page = newPage }
+
+
+updateDocs : Ports.Docs -> Model -> Model
+updateDocs { author, project, version, docs } model =
+    case ( Version.fromString version, Decode.decodeValue Session.docsDecoder docs ) of
+        ( Just v, Ok docs_ ) ->
+            updatePageDocs author project v docs_ model
+
+        _ ->
+            model
+
+
+updatePageDocs : String -> String -> Version -> Session.Docs -> Model -> Model
+updatePageDocs author project version docs model =
+    let
+        newSession =
+            Session.addDocs author project version docs (exit model)
+
+        newPage =
+            case model.page of
+                Docs m ->
+                    Docs (Docs.updateDocs author project version docs m)
+
+                _ ->
+                    setPageSession newSession model.page
+    in
+    { model | page = newPage }
+
+
+updateManifest : Ports.Manifest -> Model -> Model
+updateManifest { author, project, version, timestamp, manifest } model =
+    case ( Version.fromString version, Decode.decodeValue Project.decoder manifest ) of
+        ( Just v, Ok manifest_ ) ->
+            updatePageManifest
+                author
+                project
+                v
+                ( Time.millisToPosix timestamp, manifest_ )
+                model
+
+        _ ->
+            model
+
+
+updatePageManifest : String -> String -> Version -> ( Time.Posix, Project ) -> Model -> Model
+updatePageManifest author project version manifest model =
+    let
+        newSession =
+            Session.addManifest author project version manifest (exit model)
+
+        newPage =
+            case model.page of
+                Docs m ->
+                    Docs (Docs.updateManifest author project version manifest m)
+
+                _ ->
+                    setPageSession newSession model.page
+    in
+    { model | page = newPage }
+
+
+setPageSession : Session.Data -> Page -> Page
+setPageSession session page =
+    case page of
+        NotFound _ ->
+            NotFound session
+
+        Search m ->
+            Search { m | session = session }
+
+        Diff m ->
+            Diff { m | session = session }
+
+        Docs m ->
+            Docs { m | session = session }
 
 
 
@@ -191,7 +320,7 @@ exit model =
         Search m ->
             m.session
 
-        Package m ->
+        Docs m ->
             m.session
 
         Diff m ->
@@ -218,7 +347,7 @@ stepUrl url model =
                     )
                 , route (s "packages" </> author_ </> project_ </> version_ </> focus_)
                     (\author project version focus ->
-                        stepPackage model (Package.init session author project version focus)
+                        stepDocs model (Docs.init session author project version focus)
                     )
                 ]
     in
@@ -247,7 +376,7 @@ project_ =
     custom "PROJECT" Just
 
 
-version_ : Parser (Maybe V.Version -> a) a
+version_ : Parser (Maybe Version -> a) a
 version_ =
     custom "VERSION" <|
         \string ->
@@ -255,14 +384,14 @@ version_ =
                 Just Nothing
 
             else
-                Maybe.map Just (V.fromString string)
+                Maybe.map Just (Version.fromString string)
 
 
-focus_ : Parser (Package.Focus -> a) a
+focus_ : Parser (Docs.Focus -> a) a
 focus_ =
     oneOf
-        [ map Package.Readme top
-        , map Package.Module (moduleName_ </> fragment identity)
+        [ map Docs.Readme top
+        , map Docs.Module (moduleName_ </> fragment identity)
         ]
 
 

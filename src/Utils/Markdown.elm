@@ -1,9 +1,16 @@
 module Utils.Markdown exposing (block)
 
+{-|
+
+@docs block
+
+-}
+
 import Html
 import Markdown exposing (defaultOptions)
 
 
+{-| -}
 block : String -> Html.Html msg
 block raw =
     Markdown.toHtmlWith myOptions [] raw

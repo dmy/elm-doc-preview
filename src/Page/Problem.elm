@@ -1,9 +1,10 @@
-module Page.Problem exposing
-    ( missingModule
-    , notFound
-    , offline
-    , styles
-    )
+module Page.Problem exposing (missingModule, notFound, offline, styles)
+
+{-|
+
+@docs missingModule, notFound, offline, styles
+
+-}
 
 import Elm.Version as V
 import Href
@@ -15,6 +16,7 @@ import Html.Attributes exposing (..)
 -- NOT FOUND
 
 
+{-| -}
 notFound : List (Html msg)
 notFound =
     [ div [ style "font-size" "12em" ] [ text "404" ]
@@ -22,6 +24,7 @@ notFound =
     ]
 
 
+{-| -}
 styles : List (Attribute msg)
 styles =
     [ style "text-align" "center"
@@ -34,6 +37,7 @@ styles =
 -- OFFLINE
 
 
+{-| -}
 offline : String -> List (Html msg)
 offline file =
     [ div [ style "font-size" "3em" ]
@@ -48,6 +52,7 @@ offline file =
 -- MISSING MODULE
 
 
+{-| -}
 missingModule : String -> String -> Maybe V.Version -> String -> List (Html msg)
 missingModule author project version name =
     [ div [ style "font-size" "3em" ]

@@ -1,8 +1,10 @@
-module Release exposing
-    ( Release
-    , decoder
-    , getLatest
-    )
+module Release exposing (Release, decoder, getLatest)
+
+{-|
+
+@docs Release, decoder, getLatest
+
+-}
 
 import Elm.Version as V
 import Json.Decode as D
@@ -14,6 +16,7 @@ import Utils.OneOrMore exposing (OneOrMore(..))
 -- RELEASE
 
 
+{-| -}
 type alias Release =
     { version : V.Version
     , time : Time.Posix
@@ -24,6 +27,7 @@ type alias Release =
 -- GET LATEST VERSION
 
 
+{-| -}
 getLatest : OneOrMore Release -> V.Version
 getLatest (OneOrMore r rs) =
     getLatestVersionHelp rs r
@@ -48,6 +52,7 @@ getLatestVersionHelp releases maxRelease =
 -- JSON
 
 
+{-| -}
 decoder : D.Decoder (OneOrMore Release)
 decoder =
     D.keyValuePairs (D.map (\i -> Time.millisToPosix (i * 1000)) D.int)

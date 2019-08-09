@@ -1,14 +1,16 @@
 module Skeleton exposing
-    ( Details
-    , Segment
-    , Warning(..)
-    , authorSegment
-    , helpSegment
-    , moduleSegment
-    , projectSegment
-    , versionSegment
+    ( Details, Segment, Warning(..)
+    , authorSegment, moduleSegment, projectSegment, versionSegment
     , view
     )
+
+{-|
+
+@docs Details, Segment, Warning
+@docs authorSegment, moduleSegment, projectSegment, versionSegment
+@docs view
+
+-}
 
 import Browser
 import Elm.Version as V
@@ -16,7 +18,6 @@ import Href
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Lazy exposing (..)
-import Json.Decode as D
 import Utils.Logo as Logo
 
 
@@ -24,6 +25,7 @@ import Utils.Logo as Logo
 -- NODE
 
 
+{-| -}
 type alias Details msg =
     { title : String
     , header : List Segment
@@ -33,6 +35,7 @@ type alias Details msg =
     }
 
 
+{-| -}
 type Warning
     = NoProblems
     | NewerVersion String V.Version
@@ -42,31 +45,31 @@ type Warning
 -- SEGMENT
 
 
+{-| -}
 type Segment
     = Text String
     | Link String String
 
 
-helpSegment : Segment
-helpSegment =
-    Text "help"
-
-
+{-| -}
 authorSegment : String -> Segment
 authorSegment author =
     Text author
 
 
+{-| -}
 projectSegment : String -> String -> Segment
 projectSegment author project =
     Link (Href.toProject author project) project
 
 
+{-| -}
 versionSegment : String -> String -> Maybe V.Version -> Segment
 versionSegment author project version =
     Link (Href.toVersion author project version) (vsnToString version)
 
 
+{-| -}
 moduleSegment : String -> String -> Maybe V.Version -> String -> Segment
 moduleSegment author project version moduleName =
     Link (Href.toModule author project version moduleName Nothing) moduleName
@@ -86,6 +89,7 @@ vsnToString maybeVersion =
 -- VIEW
 
 
+{-| -}
 view : (a -> msg) -> Details a -> Browser.Document msg
 view toMsg details =
     { title =
@@ -122,6 +126,7 @@ slash =
     span [ class "spacey-char" ] [ text "/" ]
 
 
+{-| -}
 viewSegment : Segment -> Html msg
 viewSegment segment =
     case segment of

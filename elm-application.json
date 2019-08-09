@@ -1,0 +1,23 @@
+{
+    "name": "dmy/elm-doc-preview",
+    "summary": "Documentation previewer",
+    "version": "3.0.0",
+    "exposed-modules": [
+        "Href",
+        "Session",
+        "Page.Docs.Block",
+        "Page.Search",
+        "Page.Diff",
+        "Page.Problem",
+        "Page.Docs",
+        "Page.Search.Entry",
+        "Release",
+        "Utils.Spinner",
+        "Utils.OneOrMore",
+        "Utils.Logo",
+        "Utils.Error",
+        "Utils.Markdown",
+        "Skeleton"
+    ]
+}
+

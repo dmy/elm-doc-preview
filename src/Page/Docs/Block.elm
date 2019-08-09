@@ -1,8 +1,10 @@
-module Page.Docs.Block exposing
-    ( Info
-    , makeInfo
-    , view
-    )
+module Page.Docs.Block exposing (Info, makeInfo, view)
+
+{-|
+
+@docs Info, makeInfo, view
+
+-}
 
 import Dict
 import Elm.Docs as Docs
@@ -27,6 +29,7 @@ maxWidth =
 -- VIEW
 
 
+{-| -}
 view : Info -> Docs.Block -> Html msg
 view info block =
     case block of
@@ -174,6 +177,7 @@ unionMore info =
 -- INFO
 
 
+{-| -}
 type alias Info =
     { author : String
     , project : String
@@ -187,6 +191,7 @@ type alias TypeNameDict =
     Dict.Dict String ( String, String )
 
 
+{-| -}
 makeInfo : String -> String -> Maybe V.Version -> String -> List Docs.Module -> Info
 makeInfo author project version moduleName docsList =
     let
@@ -269,6 +274,7 @@ type Context
     | Other
 
 
+{-| -}
 toLines : Info -> Context -> Type.Type -> Lines (Line msg)
 toLines info context tipe =
     case tipe of
@@ -339,6 +345,7 @@ toLines info context tipe =
 -- FUNCTIONS
 
 
+{-| -}
 collectArgs : List Type.Type -> Type.Type -> List Type.Type
 collectArgs revArgs tipe =
     case tipe of
@@ -349,6 +356,7 @@ collectArgs revArgs tipe =
             List.reverse (tipe :: revArgs)
 
 
+{-| -}
 lambdaOne : OneSettings (Lines (Line msg)) msg
 lambdaOne =
     { open = []
@@ -361,6 +369,7 @@ lambdaOne =
     }
 
 
+{-| -}
 lambdaMore : MoreSettings (Lines (Line msg)) msg
 lambdaMore =
     { open = []
@@ -372,6 +381,7 @@ lambdaMore =
     }
 
 
+{-| -}
 lambdaOneParens : OneSettings (Lines (Line msg)) msg
 lambdaOneParens =
     { open = [ text "(" ]
@@ -384,6 +394,7 @@ lambdaOneParens =
     }
 
 
+{-| -}
 lambdaMoreParens : MoreSettings (Lines (Line msg)) msg
 lambdaMoreParens =
     { open = [ text "( " ]
@@ -399,6 +410,7 @@ lambdaMoreParens =
 -- TUPLES
 
 
+{-| -}
 tupleOne : OneSettings (Lines (Line msg)) msg
 tupleOne =
     { open = [ text "( " ]
@@ -411,6 +423,7 @@ tupleOne =
     }
 
 
+{-| -}
 tupleMore : MoreSettings (Lines (Line msg)) msg
 tupleMore =
     { open = [ text "( " ]
@@ -426,6 +439,7 @@ tupleMore =
 -- TYPES
 
 
+{-| -}
 typeOne : Bool -> OneSettings (Lines (Line msg)) msg
 typeOne needsParens =
     if needsParens then
@@ -449,6 +463,7 @@ typeOne needsParens =
         }
 
 
+{-| -}
 typeMore : Bool -> MoreSettings (Lines (Line msg)) msg
 typeMore needsParens =
     if needsParens then
@@ -474,6 +489,7 @@ typeMore needsParens =
 -- RECORDS
 
 
+{-| -}
 recordOne : OneSettings ( String, Lines (Line msg) ) msg
 recordOne =
     { open = [ text "{ " ]
@@ -486,6 +502,7 @@ recordOne =
     }
 
 
+{-| -}
 recordMore : MoreSettings ( String, Lines (Line msg) ) msg
 recordMore =
     { open = [ text "{ " ]
@@ -501,6 +518,7 @@ recordMore =
 -- EXTENDED RECORDS
 
 
+{-| -}
 recordOneExt : String -> OneSettings ( String, Lines (Line msg) ) msg
 recordOneExt extension =
     let
@@ -517,6 +535,7 @@ recordOneExt extension =
     }
 
 
+{-| -}
 recordMoreExt : MoreSettings ( String, Lines (Line msg) ) msg
 recordMoreExt =
     { open = [ text "    | " ]
@@ -532,6 +551,7 @@ recordMoreExt =
 -- RECORD HELPERS
 
 
+{-| -}
 fieldToLine : ( String, Lines (Line msg) ) -> Maybe ( Int, Line msg )
 fieldToLine ( field, lines ) =
     case lines of
@@ -542,6 +562,7 @@ fieldToLine ( field, lines ) =
             Just ( String.length field + 3 + width, text field :: space :: colon :: space :: line )
 
 
+{-| -}
 fieldToLines : ( String, Lines (Line msg) ) -> OneOrMore (Line msg)
 fieldToLines ( field, lines ) =
     case lines of
@@ -564,6 +585,7 @@ fieldToLines ( field, lines ) =
 -- HELPERS
 
 
+{-| -}
 toLine : Lines line -> Maybe ( Int, line )
 toLine lines =
     case lines of
@@ -574,6 +596,7 @@ toLine lines =
             Nothing
 
 
+{-| -}
 linesToList : Lines line -> List line
 linesToList lines =
     case lines of
@@ -588,6 +611,7 @@ type OneOrMore a
     = OneOrMore a (List a)
 
 
+{-| -}
 toOneOrMore : Lines line -> OneOrMore line
 toOneOrMore lines =
     case lines of
@@ -623,6 +647,7 @@ type alias MoreSettings a msg =
     }
 
 
+{-| -}
 toLinesHelp : OneSettings a msg -> MoreSettings a msg -> a -> List a -> Lines (Line msg)
 toLinesHelp one more x xs =
     let
@@ -637,6 +662,7 @@ toLinesHelp one more x xs =
             toMoreLines more x xs
 
 
+{-| -}
 toOneLine : Int -> Line msg -> OneSettings a msg -> List a -> Maybe ( Int, Line msg )
 toOneLine chunkWidth chunk one entries =
     case entries of
@@ -665,6 +691,7 @@ toOneLine chunkWidth chunk one entries =
                                 Nothing
 
 
+{-| -}
 toMoreLines : MoreSettings a msg -> a -> List a -> Lines (Line msg)
 toMoreLines s x xs =
     let
@@ -697,26 +724,25 @@ toMoreLines s x xs =
 -- HELPERS
 
 
+{-| -}
 keyword : String -> Html msg
 keyword kw =
     span [ class "hljs-keyword" ] [ text kw ]
 
 
+{-| -}
 space : Html msg
 space =
     text " "
 
 
-arrow : Html msg
-arrow =
-    span [] [ text "->" ]
-
-
+{-| -}
 colon : Html msg
 colon =
     span [] [ text ":" ]
 
 
+{-| -}
 equals : Html msg
 equals =
     span [] [ text "=" ]

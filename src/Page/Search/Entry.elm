@@ -1,9 +1,12 @@
-module Page.Search.Entry exposing
-    ( Entry
-    , decoder
-    , search
-    )
+module Page.Search.Entry exposing (Entry, decoder, search)
 
+{-|
+
+@docs Entry, decoder, search
+
+-}
+
+import Dict exposing (Dict)
 import Elm.Version as V
 import Json.Decode as D
 
@@ -12,6 +15,7 @@ import Json.Decode as D
 -- ENTRY
 
 
+{-| -}
 type alias Entry =
     { name : String
     , author : String
@@ -26,7 +30,8 @@ type alias Entry =
 -- SEARCH
 
 
-search : String -> List Entry -> List Entry
+{-| -}
+search : String -> Dict String Entry -> List Entry
 search query entries =
     let
         queryTerms =
@@ -46,13 +51,14 @@ search query entries =
             in
             List.all matchesTerm queryTerms
     in
-    List.filter matchesAllTerms entries
+    List.filter matchesAllTerms (Dict.values entries)
 
 
 
 -- DECODER
 
 
+{-| -}
 decoder : D.Decoder Entry
 decoder =
     D.map4 (\f a b c -> f a b c)

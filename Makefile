@@ -8,14 +8,13 @@ doc_server := lib/elm-doc-server.js
 
 css_files := static/css/style.css static/highlight/styles/default.css static/css/spinner.css
 
-all: clean $(doc_server) elm_js $(css)
+all: clean $(doc_server) elm_js fix_identity minify $(css)
 
 $(doc_server): lib/elm-doc-server.ts
 	npx tsc
 
 elm_js:
-	#npx elm make --output=$(elm_js) --optimize $(main)
-	npx elm make --output=$(elm_js) $(main)
+	npx elm make --output=$(elm_js) --optimize $(main)
 
 fix_identity:
 	# Work around elm bug https://github.com/elm/compiler/issues/1836

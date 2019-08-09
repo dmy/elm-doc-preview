@@ -1,12 +1,18 @@
-module Page.Package exposing
-    ( Focus(..)
-    , Model
-    , Msg
-    , init
+module Page.Docs exposing
+    ( Focus(..), Model, Msg
+    , init, update, view
     , toTitle
-    , update
-    , view
+    , updateReadme, updateDocs, updateManifest
     )
+
+{-|
+
+@docs Focus, Model, Msg
+@docs init, update, view
+@docs toTitle
+@docs updateReadme, updateDocs, updateManifest
+
+-}
 
 import Browser.Dom as Dom
 import DateFormat
@@ -15,7 +21,7 @@ import Elm.Docs as Docs
 import Elm.License as License
 import Elm.Package as Package
 import Elm.Project as Project exposing (Project)
-import Elm.Version as V
+import Elm.Version as Version exposing (Version)
 import Href
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -25,33 +31,37 @@ import Http
 import Page.Docs.Block as Block
 import Page.Problem as Problem
 import Release
-import Session
+import Session exposing (Docs(..))
 import Skeleton
 import Task
 import Time
 import Url.Builder as Url
+import Utils.Error
 import Utils.Markdown as Markdown
 import Utils.OneOrMore exposing (OneOrMore)
+import Utils.Spinner
 
 
 
 -- MODEL
 
 
+{-| -}
 type alias Model =
     { session : Session.Data
     , author : String
     , project : String
-    , version : Maybe V.Version
+    , version : Maybe Version
     , focus : Focus
     , query : String
-    , latest : Status V.Version
+    , latest : Status Version
     , readme : Status String
-    , docs : Status (List Docs.Module)
+    , docs : Status Docs
     , manifest : Status ( Time.Posix, Project )
     }
 
 
+{-| -}
 type Focus
     = Readme
     | Module String (Maybe String)
@@ -63,16 +73,12 @@ type Status a
     | Success a
 
 
-type DocsError
-    = NotFound
-    | FoundButMissingModule
-
-
 
 -- INIT
 
 
-init : Session.Data -> String -> String -> Maybe V.Version -> Focus -> ( Model, Cmd Msg )
+{-| -}
+init : Session.Data -> String -> String -> Maybe Version -> Focus -> ( Model, Cmd Msg )
 init session author project version focus =
     case Session.getReleases session author project of
         Just releases ->
@@ -89,7 +95,7 @@ init session author project version focus =
             )
 
 
-getInfo : V.Version -> Model -> ( Model, Cmd Msg )
+getInfo : Version -> Model -> ( Model, Cmd Msg )
 getInfo latest model =
     let
         author =
@@ -144,15 +150,17 @@ scrollIfNeeded focus =
 -- UPDATE
 
 
+{-| -}
 type Msg
     = QueryChanged String
     | ScrollAttempted (Result Dom.Error ())
     | GotReleases (Result Http.Error (OneOrMore Release.Release))
-    | GotReadme V.Version (Result Http.Error String)
-    | GotDocs V.Version (Result Http.Error (List Docs.Module))
-    | GotManifest V.Version (Result Http.Error ( Time.Posix, Project ))
+    | GotReadme Version (Result Http.Error String)
+    | GotDocs Version (Result Http.Error Docs)
+    | GotManifest Version (Result Http.Error ( Time.Posix, Project ))
 
 
+{-| -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -186,6 +194,12 @@ update msg model =
                         { model
                             | latest = Success latest
                             , session = Session.addReleases model.author model.project releases model.session
+                            , version =
+                                if model.version == Nothing then
+                                    Just latest
+
+                                else
+                                    model.version
                         }
 
         GotReadme version result ->
@@ -235,9 +249,56 @@ update msg model =
 
 
 
+-- EXTERNAL UPDATES
+
+
+{-| -}
+updateReadme : String -> String -> Version -> String -> Model -> Model
+updateReadme author project version readme model =
+    let
+        newSession =
+            Session.addReadme author project version readme model.session
+    in
+    if author == model.author && project == model.project && Just version == model.version then
+        { model | session = newSession, readme = Success readme }
+
+    else
+        { model | session = newSession }
+
+
+{-| -}
+updateDocs : String -> String -> Version -> Docs -> Model -> Model
+updateDocs author project version docs model =
+    let
+        newSession =
+            Session.addDocs author project version docs model.session
+    in
+    if author == model.author && project == model.project && Just version == model.version then
+        { model | session = newSession, docs = Success docs }
+
+    else
+        { model | session = newSession }
+
+
+{-| -}
+updateManifest : String -> String -> Version -> ( Time.Posix, Project ) -> Model -> Model
+updateManifest author project version manifest model =
+    let
+        newSession =
+            Session.addManifest author project version manifest model.session
+    in
+    if author == model.author && project == model.project && Just version == model.version then
+        { model | session = newSession, manifest = Success manifest }
+
+    else
+        { model | session = newSession }
+
+
+
 -- VIEW
 
 
+{-| -}
 view : Model -> Skeleton.Details Msg
 view model =
     { title = toTitle model
@@ -255,6 +316,7 @@ view model =
 -- TITLE
 
 
+{-| -}
 toTitle : Model -> String
 toTitle model =
     case model.focus of
@@ -269,13 +331,13 @@ toGenericTitle : Model -> String
 toGenericTitle model =
     case getVersion model of
         Just version ->
-            model.project ++ " " ++ V.toString version
+            model.project ++ " " ++ Version.toString version
 
         Nothing ->
             model.project
 
 
-getVersion : Model -> Maybe V.Version
+getVersion : Model -> Maybe Version
 getVersion model =
     case model.version of
         Just version ->
@@ -357,7 +419,12 @@ viewContent : Model -> Html msg
 viewContent model =
     case model.focus of
         Readme ->
-            lazy viewReadme model.readme
+            case model.docs of
+                Success (Error error) ->
+                    lazy Utils.Error.view error
+
+                _ ->
+                    lazy viewReadme model.readme
 
         Module name tag ->
             lazy5 viewModule model.author model.project model.version name model.docs
@@ -374,7 +441,7 @@ viewReadme status =
             div [ class "block-list" ] [ Markdown.block readme ]
 
         Loading ->
-            div [ class "block-list" ] [ text "" ]
+            Utils.Spinner.view
 
         -- TODO
         Failure ->
@@ -387,10 +454,10 @@ viewReadme status =
 -- VIEW MODULE
 
 
-viewModule : String -> String -> Maybe V.Version -> String -> Status (List Docs.Module) -> Html msg
+viewModule : String -> String -> Maybe Version -> String -> Status Docs -> Html msg
 viewModule author project version name status =
     case status of
-        Success allDocs ->
+        Success (Modules allDocs) ->
             case findModule name allDocs of
                 Just docs ->
                     let
@@ -410,9 +477,13 @@ viewModule author project version name status =
                         (class "block-list" :: Problem.styles)
                         (Problem.missingModule author project version name)
 
+        Success (Error error) ->
+            lazy Utils.Error.view error
+
         Loading ->
             div [ class "block-list" ]
                 [ h1 [ class "block-list-title" ] [ text name ] -- TODO better loading
+                , Utils.Spinner.view
                 ]
 
         Failure ->
@@ -455,7 +526,7 @@ viewSidebar model =
             ]
             []
         , viewSidebarModules model
-        , viewInstall model.author model.project
+        , viewInstall model.manifest model.author model.project
         , viewRelease model.manifest
         , viewDependencies model.manifest
         ]
@@ -471,8 +542,7 @@ viewSidebarModules model =
         Loading ->
             text ""
 
-        -- TODO
-        Success modules ->
+        Success (Modules modules) ->
             if String.isEmpty model.query then
                 let
                     viewEntry docs =
@@ -486,6 +556,9 @@ viewSidebarModules model =
                         String.toLower model.query
                 in
                 ul [] (List.filterMap (viewSearchItem model query) modules)
+
+        Success (Error _) ->
+            text ""
 
 
 viewSearchItem : Model -> String -> Docs.Module -> Maybe (Html msg)
@@ -548,7 +621,7 @@ isTagMatch query toResult tipeName ( tagName, _ ) =
 -- VIEW "README" LINK
 
 
-viewReadmeLink : String -> String -> Maybe V.Version -> Focus -> Html msg
+viewReadmeLink : String -> String -> Maybe Version -> Focus -> Html msg
 viewReadmeLink author project version focus =
     navLink "README" (Href.toVersion author project version) <|
         case focus of
@@ -563,7 +636,7 @@ viewReadmeLink author project version focus =
 -- VIEW "BROWSE SOURCE" LINK
 
 
-viewBrowseSourceLink : String -> String -> Maybe V.Version -> Status V.Version -> Html msg
+viewBrowseSourceLink : String -> String -> Maybe Version -> Status Version -> Html msg
 viewBrowseSourceLink author project maybeVersion latest =
     case maybeVersion of
         Just version ->
@@ -581,12 +654,12 @@ viewBrowseSourceLink author project maybeVersion latest =
                     text "Browse Source"
 
 
-viewBrowseSourceLinkHelp : String -> String -> V.Version -> Html msg
+viewBrowseSourceLinkHelp : String -> String -> Version -> Html msg
 viewBrowseSourceLinkHelp author project version =
     let
         url =
             Url.absolute
-                [ "source", author, project, V.toString version ]
+                [ "source", author, project, Version.toString version ]
                 []
     in
     a [ class "pkg-nav-module", href url ] [ text "Browse Source" ]
@@ -645,21 +718,26 @@ navLink name url isBold =
 -- VIEW INSTALL
 
 
-viewInstall : String -> String -> Html msg
-viewInstall author project =
-    let
-        install =
-            "elm install " ++ author ++ "/" ++ project
-    in
-    div []
-        [ h2 [] [ text "Install" ]
-        , pre
-            [ class "copy-to-clipboard"
-            , attribute "data-clipboard-text" install
-            ]
-            [ text install
-            ]
-        ]
+viewInstall : Status ( Time.Posix, Project ) -> String -> String -> Html msg
+viewInstall manifest author project =
+    case manifest of
+        Success ( releaseTime, Project.Package info ) ->
+            let
+                install =
+                    "elm install " ++ author ++ "/" ++ project
+            in
+            div []
+                [ h2 [] [ text "Install" ]
+                , pre
+                    [ class "copy-to-clipboard"
+                    , attribute "data-clipboard-text" install
+                    ]
+                    [ text install
+                    ]
+                ]
+
+        _ ->
+            text ""
 
 
 
@@ -675,7 +753,7 @@ viewRelease manifest =
                     Url.absolute
                         [ "source"
                         , Package.toString info.name
-                        , V.toString info.version
+                        , Version.toString info.version
                         , "LICENSE"
                         ]
                         []
@@ -724,35 +802,35 @@ viewDependencies manifest =
         Success ( releaseTime, Project.Package info ) ->
             div []
                 (h2 [] [ text "Dependencies" ]
-                    :: viewElmConstraint info.elm
-                    :: List.map viewConstraint info.deps
+                    :: viewElmVersion Constraint.toString info.elm
+                    :: List.map (viewDependency Constraint.toString) info.deps
+                )
+
+        Success ( releaseTime, Project.Application info ) ->
+            div []
+                (h2 [] [ text "Dependencies" ]
+                    :: viewElmVersion Version.toString info.elm
+                    :: List.map (viewDependency Version.toString) info.depsDirect
                 )
 
         _ ->
             text ""
 
 
-viewElmConstraint : Constraint -> Html msg
-viewElmConstraint constraint =
+viewElmVersion : (version -> String) -> version -> Html msg
+viewElmVersion versionToString version =
     div [ style "white-space" "nowrap" ]
-        [ text "elm"
-        , text (" " ++ Constraint.toString constraint)
+        [ text ("elm " ++ versionToString version)
         ]
 
 
-viewConstraint : ( Package.Name, Constraint ) -> Html msg
-viewConstraint ( name, constraint ) =
+viewDependency : (version -> String) -> ( Package.Name, version ) -> Html msg
+viewDependency versionToString ( name, version ) =
     div [ style "white-space" "nowrap" ]
         [ a
             [ href <|
-                Url.absolute
-                    [ "packages"
-                    , Package.toString name
-                    , "latest"
-                    ]
-                    []
+                Url.absolute [ "packages", Package.toString name, "latest" ] []
             ]
-            [ text (Package.toString name)
-            ]
-        , text (" " ++ Constraint.toString constraint)
+            [ text (Package.toString name) ]
+        , text (" " ++ versionToString version)
         ]
