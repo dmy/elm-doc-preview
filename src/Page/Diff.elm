@@ -113,7 +113,7 @@ view model =
                 ]
 
             Success (OneOrMore r rs) ->
-                [ h1 [] [ text "Published Versions" ]
+                [ h1 [] [ text "Cached Versions" ]
                 , p [] <|
                     viewReleases model.author model.project <|
                         List.map .version
