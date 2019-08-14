@@ -283,8 +283,9 @@ pre {
 }
 
 .pkg-nav pre {
-  width: 200px;
+  min-width: 200px;
   padding: 8px 4px;
+  width: max-content;
 }
 
 .pkg-nav pre:active {
