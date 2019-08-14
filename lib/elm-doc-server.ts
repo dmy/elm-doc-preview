@@ -120,7 +120,6 @@ function getManifestSync(manifestPath: string): Manifest | null {
     manifest["timestamp"] = Math.round(stat.mtimeMs / 1000);
     return completeApplication(manifestPath, manifest);
   } catch (err) {
-    warning(err);
     return null;
   }
 }
@@ -405,10 +404,17 @@ class DocServer {
     if (this.manifest && this.manifest.name && this.manifest.version) {
       info(chalk`Previewing {magenta ${this.manifest.name} ${this.manifest.version}}`,
         `from ${path.resolve(dir)}`);
+    } else {
+      info(
+        `No package or application found in ${this.dir},`,
+        "running documentation server only"
+      );
     }
 
     this.setupWebServer();
-    this.setupFilesWatcher();
+    if (this.manifest) {
+      this.setupFilesWatcher();
+    }
   }
 
   setupWebServer() {
@@ -636,6 +642,8 @@ class DocServer {
     return this.app.listen(port, () => {
       if (browser && this.manifest && this.manifest.name && this.manifest.version) {
         open(`http://localhost:${port}/packages/${this.manifest.name}/${this.manifest.version}/`);
+      } else if (browser) {
+        open(`http://localhost:${port}`);
       }
       info(
         chalk`{blue Browse} {bold {green <http://localhost:${port.toString()}>}}`,
