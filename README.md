@@ -61,16 +61,33 @@ offline documentation server for local cached packages.
 # Applications support
 Application documentation is
 [not yet supported by Elm](https://github.com/elm/compiler/issues/835#issuecomment-440080525),
-so `elm-doc-preview` will generate a package from the application with the same modules and
-build the documentation from it. There are two consequences:
-1. You have to define an `elm-application.json` file if you want to customize the application **name**, **summary**, **version** or **exposed-modules** that are included in the documentation.
-2. The application ports will be stubbed with fake versions as ports are forbidden in packages. This means that ports will appear as normal functions in the documentation. Also currently, this requires ports declarations to be on one line, if this is an issue for you, please open a bug.
+so `elm-doc-preview` will generate a package from the application with the same
+modules and build the documentation from it. There are three consequences:
+1. The `elm` command needs to be globally available to be able to build the
+fake package documentation in a temporary directory.
+2. You have to define an `elm-application.json` file if you want to customize
+the application **name**, **summary**, **version** or **exposed-modules** that
+are included in the documentation.
+3. The application ports will be stubbed with fake versions as ports are
+forbidden in packages. This means that ports will appear as normal functions in
+the documentation. Also currently, this requires ports declarations to be on
+one line, if this is an issue for you, please open a bug.
 
-Without an `elm-application.json` file, `elm-doc-preview` will show an application as `my/application 1.0.0` and won't include any module in the documentation except the `exposed-modules` eventually found in forked or local packages included in the application `source-directories`.
+Without an `elm-application.json` file, `elm-doc-preview` will show an
+application as `my/application 1.0.0` and won't include any module in the
+documentation except the `exposed-modules` eventually found in forked or
+local packages included in the application `source-directories`.
 
-To customize the application, add an `elm-application.json` file and include any wanted field (extending `elm.json` was not possible because `elm install` will remove any unexpected field from it when run, and all the additional fields are currently unexpected for an application, even if they are correct for a package).
+To customize the application, add an `elm-application.json` file and include
+any wanted field (extending `elm.json` was not possible because `elm install`
+will remove any unexpected field from it when run, and all the additional
+fields are currently unexpected for an application, even if they are correct
+for a package).
 
-For example, here is the [elm-application.json](https://github.com/dmy/elm-doc-preview/blob/master/elm-application.json) file for the `elm-doc-preview` Elm application followed by a description of each field:
+For example, here is the
+[elm-application.json](https://github.com/dmy/elm-doc-preview/blob/master/elm-application.json)
+file for the `elm-doc-preview` Elm application followed by a description of
+each field:
 
 `elm-application.json`:
 ```elm-application.json
@@ -127,16 +144,22 @@ modules from the list.
 
 # Forked and local packages in applications
 `elm-doc-preview` will automatically exposes documentation for forked or local
-packages modules if their are exposed in an `elm.json` file located in the directory above the one declared in `source-directories`.
+packages modules if their are exposed in an `elm.json` file located in the
+directory above the one declared in `source-directories`.
 
-Typically, to import a forked package and keep its documentation, just clone it in the application directory, and add the forked packages `src` sub-directory in `elm.json` `source-directories`.
+Typically, to import a forked package and keep its documentation, just clone it
+in the application directory, and add the forked packages `src` sub-directory
+in `elm.json` `source-directories`.
 
-See the [project-metadata-utils](https://github.com/dmy/elm-doc-preview/tree/master/project-metadata-utils) fork inside `elm-doc-preview` for an example.
+See the
+[project-metadata-utils](https://github.com/dmy/elm-doc-preview/tree/master/project-metadata-utils)
+fork inside `elm-doc-preview` for an example.
 
 
 # Online version
 
-There is also an online version supporting documentations loading from github to share them for online reviews:
+There is also an online version supporting documentations loading from github
+to share them for online reviews:
 
 https://elm-doc-preview.netlify.com
 
