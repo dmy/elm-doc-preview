@@ -25,12 +25,13 @@ $ npm install -g elm-doc-preview
 
 # Synopsis
 
-```sh
+```
 Usage: edp|elm-doc-preview [options] [path_to_package_or_application]
 
 Options:
   -V, --version      output the version number
   -p, --port <port>  the server listening port (default: 8000)
+  -n, --no-browser   do not open in browser when server starts
   -h, --help         output usage information
 
 Environment variables:
@@ -54,18 +55,20 @@ or from anywhere:
 ```sh
 $ elm-doc-preview path/to/package_or_application
 ```
+When no package or application is found, `elm-doc-preview` will just run as an
+offline documentation server for local cached packages.
 
 # Applications support
 Application documentation is
 [not yet supported by Elm](https://github.com/elm/compiler/issues/835#issuecomment-440080525),
 so `elm-doc-preview` will generate a package from the application with the same modules and
 build the documentation from it. There are two consequences:
-1. You have to define an `elm-application.json` file if you want to customize the application **name**, **summary**, **version** or **modules** that are included in the documentation.
+1. You have to define an `elm-application.json` file if you want to customize the application **name**, **summary**, **version** or **exposed-modules** that are included in the documentation.
 2. The application ports will be stubbed with fake versions as ports are forbidden in packages. This means that ports will appear as normal functions in the documentation. Also currently, this requires ports declarations to be on one line, if this is an issue for you, please open a bug.
 
 Without an `elm-application.json` file, `elm-doc-preview` will show an application as `my/application 1.0.0` and won't include any module in the documentation except the `exposed-modules` eventually found in forked or local packages included in the application `source-directories`.
 
-To customize the application, add an `elm-application.json` file and include any wanted section (extending `elm.json` is not possible because `elm install` will remove any unexpected section from it when run, and all the following sections are currently unexpected for an application).
+To customize the application, add an `elm-application.json` file and include any wanted field (extending `elm.json` was not possible because `elm install` will remove any unexpected field from it when run, and all the additional fields are currently unexpected for an application, even if they are correct for a package).
 
 For example, here is the [elm-application.json](https://github.com/dmy/elm-doc-preview/blob/master/elm-application.json) file for the `elm-doc-preview` Elm application followed by a description of each field:
 
