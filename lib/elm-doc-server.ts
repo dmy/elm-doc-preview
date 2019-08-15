@@ -11,12 +11,18 @@ import expressWs from "express-ws";
 import ws from "ws";
 import { SpawnSyncReturns } from "child_process";
 import glob from "glob";
-import { promisify } from "util";
 import sane from "sane";
-import open from "open";
-const readFileAsync = promisify(fs.readFile);
-const globAsync = promisify(glob);
-const statAsync = promisify(fs.stat);
+import open from "opn";
+
+// For node < 8
+require('util.promisify/shim')();
+import 'core-js/features/object/entries';
+import 'core-js/features/object/values';
+
+import util from "util";
+const readFileAsync = util.promisify(fs.readFile);
+const globAsync = util.promisify(glob);
+const statAsync = util.promisify(fs.stat);
 
 tmp.setGracefulCleanup();
 
@@ -111,7 +117,7 @@ async function getManifest(manifestPath: string): Promise<Manifest> {
     .then(async (json) => {
       let manifest = JSON.parse(json);
       let stat = await statAsync(manifestPath);
-      manifest["timestamp"] = Math.round(stat.mtimeMs / 1000);
+      manifest["timestamp"] = Math.round(stat.mtime.getTime() / 1000);
       manifest = completeApplication(manifestPath, manifest);
       return manifest;
     })
@@ -123,7 +129,7 @@ function getManifestSync(manifestPath: string): Manifest | null {
     const json = fs.readFileSync(manifestPath, "utf8");
     let manifest = JSON.parse(json);
     let stat = fs.statSync(manifestPath);
-    manifest["timestamp"] = Math.round(stat.mtimeMs / 1000);
+    manifest["timestamp"] = Math.round(stat.mtime.getTime() / 1000);
     return completeApplication(manifestPath, manifest);
   } catch (err) {
     return null;
