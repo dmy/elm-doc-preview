@@ -62,13 +62,11 @@ offline documentation server for local cached packages.
 Application documentation is
 [not yet supported by Elm](https://github.com/elm/compiler/issues/835#issuecomment-440080525),
 so `elm-doc-preview` will generate a package from the application with the same
-modules and build the documentation from it. There are three consequences:
-1. The `elm` command needs to be globally available to be able to build the
-fake package documentation in a temporary directory.
-2. You have to define an `elm-application.json` file if you want to customize
+modules and build the documentation from it. There are two consequences:
+1. You have to define an `elm-application.json` file if you want to customize
 the application **name**, **summary**, **version** or **exposed-modules** that
 are included in the documentation.
-3. The application ports will be stubbed with fake versions as ports are
+2. The application ports will be stubbed with fake versions as ports are
 forbidden in packages. This means that ports will appear as normal functions in
 the documentation. Also currently, this requires ports declarations to be on
 one line, if this is an issue for you, please open a bug.
