@@ -15,7 +15,7 @@ any surprise when releasing a package.
 - Online documentation sharing for reviews (using the
  [online version](#online-version))
 
-![elm-doc-preview](https://github.com/dmy/elm-doc-preview/raw/master/screenshots/elm-doc-preview.png)
+![elm-doc-preview](https://github.com/dmy/elm-doc-preview/raw/c2c8c14d/screenshots/elm-doc-preview.png)
 
 # Installation
 
