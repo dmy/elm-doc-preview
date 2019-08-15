@@ -15,7 +15,8 @@
     "serve-index": "^1.9.1",
     "serve-static": "^1.14.1",
     "tmp": "0.1.0",
-    "util.promisify": "^1.0.0"
+    "util.promisify": "^1.0.0",
+    "ws": "^6.2.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.0",
@@ -46,7 +47,7 @@
     "url": "https://github.com/dmy/elm-doc-preview/issues"
   },
   "homepage": "https://github.com/dmy/elm-doc-preview#readme",
-  "version": "3.0.0-rc3",
+  "version": "3.0.0-rc4",
   "bin": {
     "elm-doc-preview": "./cli.js",
     "edp": "./cli.js"
