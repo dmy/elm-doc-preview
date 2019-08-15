@@ -1,4 +1,12 @@
-port module Ports exposing (Docs, Manifest, Readme, onDocs, onManifest, onReadme)
+port module Ports exposing
+    ( Docs
+    , Manifest
+    , Readme
+    , locationHrefRequested
+    , onDocs
+    , onManifest
+    , onReadme
+    )
 
 import Json.Encode as Encode
 
@@ -35,3 +43,6 @@ port onDocs : (Docs -> msg) -> Sub msg
 
 
 port onManifest : (Manifest -> msg) -> Sub msg
+
+
+port locationHrefRequested : (String -> msg) -> Sub msg

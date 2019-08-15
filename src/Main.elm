@@ -36,7 +36,7 @@ main =
         , view = view
         , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = LinkClicked
+        , onUrlRequest = UrlRequested
         , onUrlChange = UrlChanged
         }
 
@@ -68,6 +68,7 @@ subscriptions model =
         [ Ports.onReadme OnReadme
         , Ports.onDocs OnDocs
         , Ports.onManifest OnManifest
+        , Ports.locationHrefRequested LinkClicked
         ]
 
 
@@ -114,7 +115,8 @@ init _ url key =
 
 
 type Msg
-    = LinkClicked Browser.UrlRequest
+    = LinkClicked String
+    | UrlRequested Browser.UrlRequest
     | UrlChanged Url.Url
     | SearchMsg Search.Msg
     | DiffMsg Diff.Msg
@@ -127,21 +129,15 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        LinkClicked urlRequest ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model
-                    , if String.startsWith "/source/" url.path then
-                        Nav.load (Url.toString url)
+        UrlRequested request ->
+            -- Url requests are intercepted by javascript
+            -- and handled by LinkClicked to work-around
+            -- unhandled links in markdown blocks and fix
+            -- absolute https://package.elm-lang.org/packages links.
+            ( model, Cmd.none )
 
-                      else
-                        Nav.pushUrl model.key (Url.toString url)
-                    )
-
-                Browser.External href ->
-                    ( model
-                    , Nav.load href
-                    )
+        LinkClicked href ->
+            ( model, requestHref model.key href )
 
         UrlChanged url ->
             stepUrl url model
@@ -178,6 +174,21 @@ update message model =
 
         OnManifest manifest ->
             ( updateManifest manifest model, Cmd.none )
+
+
+requestHref : Nav.Key -> String -> Cmd msg
+requestHref navKey href =
+    case Url.fromString href of
+        Just url ->
+            -- Complete URL are expected to be external
+            Nav.load href
+
+        Nothing ->
+            if String.startsWith "/source/" href then
+                Nav.load href
+
+            else
+                Nav.pushUrl navKey href
 
 
 stepSearch : Model -> ( Search.Model, Cmd Search.Msg ) -> ( Model, Cmd Msg )
