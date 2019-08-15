@@ -73,8 +73,14 @@ function fatal(...args: any[]) {
  * Find and check Elm executable
  */
 function getElm(): [Elm, string] {
-  let elm: Elm = (args, cwd = ".") => spawn.sync("elm", args, { cwd });
+  let elm: Elm = (args, cwd = ".") =>
+    spawn.sync("npx", ["--no-install", "elm"].concat(args), { cwd });
+
   let exec = elm(["--version"]);
+  if (exec.error || exec.status !== 0 || exec.stderr.toString().length > 0) {
+    elm = (args, cwd = ".") => spawn.sync("elm", args, { cwd });
+    exec = elm(["--version"]);
+  }
 
   if (exec.error) {
     fatal(`cannot run 'elm --version' (${exec.error})`);
@@ -239,7 +245,15 @@ function buildPackageDocs(dir: string, elm: Elm): object {
 function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): object {
   info(`  |> building ${path.resolve(dir)} documentation`);
   // Build package from application manifest
-  const tmpDir = tmp.dirSync({ prefix: "elm-application-", unsafeCleanup: true });
+  const elmStuff = path.resolve(dir, "elm-stuff");
+  if (!fs.existsSync(elmStuff)) {
+    fs.mkdirSync(elmStuff);
+  }
+  const tmpDir = tmp.dirSync({
+    dir: elmStuff,
+    prefix: "elm-application-",
+    unsafeCleanup: true
+  });
   const tmpDirSrc = path.resolve(tmpDir.name, "src");
   fs.mkdirSync(tmpDirSrc);
 
