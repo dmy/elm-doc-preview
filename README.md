@@ -60,7 +60,7 @@ offline documentation server for local cached packages.
 
 # Applications support
 Application documentation is
-[not yet supported by Elm](https://github.com/elm/compiler/issues/835#issuecomment-440080525),
+[not yet supported by Elm](https://github.com/elm/compiler/issues/1835#issuecomment-440080525),
 so `elm-doc-preview` will generate a package from the application with the same
 modules and build the documentation from it. There are two consequences:
 1. You have to define an `elm-application.json` file if you want to customize
