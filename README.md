@@ -91,7 +91,7 @@ each field:
 ```elm-application.json
 {
     "name": "dmy/elm-doc-preview",
-    "summary": "Documentation previewer",
+    "summary": "Offline documentation previewer",
     "version": "3.0.0",
     "exposed-modules": [
         "Href",
