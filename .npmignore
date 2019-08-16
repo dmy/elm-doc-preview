@@ -13,6 +13,7 @@ package-lock.json
 lib/elm-doc-server.ts
 static/highlight/styles/default.css
 static/css/spinner.css
+types
 static/css/style.css
 screenshots
 src
