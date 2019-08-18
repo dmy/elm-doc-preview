@@ -803,14 +803,14 @@ viewDependencies manifest =
             div []
                 (h2 [] [ text "Dependencies" ]
                     :: viewElmVersion Constraint.toString info.elm
-                    :: List.map (viewDependency Constraint.toString) info.deps
+                    :: List.map viewDepConstraint info.deps
                 )
 
         Success ( releaseTime, Project.Application info ) ->
             div []
                 (h2 [] [ text "Dependencies" ]
                     :: viewElmVersion Version.toString info.elm
-                    :: List.map (viewDependency Version.toString) info.depsDirect
+                    :: List.map viewDepVersion info.depsDirect
                 )
 
         _ ->
@@ -824,13 +824,30 @@ viewElmVersion versionToString version =
         ]
 
 
-viewDependency : (version -> String) -> ( Package.Name, version ) -> Html msg
-viewDependency versionToString ( name, version ) =
+viewDepConstraint : ( Package.Name, Constraint ) -> Html msg
+viewDepConstraint ( name, constraint ) =
     div [ style "white-space" "nowrap" ]
         [ a
             [ href <|
                 Url.absolute [ "packages", Package.toString name, "latest" ] []
             ]
             [ text (Package.toString name) ]
-        , text (" " ++ versionToString version)
+        , text (" " ++ Constraint.toString constraint)
+        ]
+
+
+viewDepVersion : ( Package.Name, Version ) -> Html msg
+viewDepVersion ( name, version ) =
+    div [ style "white-space" "nowrap" ]
+        [ a
+            [ href <|
+                Url.absolute
+                    [ "packages"
+                    , Package.toString name
+                    , Version.toString version
+                    ]
+                    []
+            ]
+            [ text (Package.toString name ++ " " ++ Version.toString version)
+            ]
         ]
