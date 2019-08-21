@@ -41,7 +41,7 @@
     "type": "git",
     "url": "git+https://github.com/dmy/elm-doc-preview.git"
   },
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "BSD-3-Clause",
   "description": "Elm offline documentation previewer with hot reloading.",
   "bugs": {
     "url": "https://github.com/dmy/elm-doc-preview/issues"
