@@ -204,3 +204,4 @@ Also replace `8000` by the port used if you changed it.
 - Code highlighting from [highlight.js](https://github.com/highlightjs/highlight.js) by Ivan Sagalaev.
 - Code highlighting theme from [Solarized](ethanschoonover.com/solarized) by Jeremy Hull.
 - CSS spinner from [SpinKit](https://github.com/tobiasahlin/SpinKit) by Tobias Ahlin.
+- [Source Sans Pro](https://github.com/adobe-fonts/source-sans-pro) and [Source Code Pro](https://github.com/adobe-fonts/source-code-pro) fonts by Paul D. Hunt
