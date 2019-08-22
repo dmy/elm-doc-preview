@@ -335,9 +335,7 @@ function importModules(srcDir: string, dstDir: string) {
   glob.sync("**/*.elm", { cwd: srcDir }).forEach(elm => {
     try {
       const dir = path.resolve(dstDir, path.dirname(elm));
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(path.resolve(dstDir, dir), { recursive: true });
-      }
+      mkdirSyncRecursive(path.resolve(dstDir, dir));
       const srcModulePath = path.resolve(srcDir, elm);
       const dstModulePath = path.resolve(dstDir, elm);
       let module = fs.readFileSync(srcModulePath).toString();
@@ -366,6 +364,22 @@ function importModules(srcDir: string, dstDir: string) {
       error(err);
     }
   });
+}
+
+function mkdirSyncRecursive(dir: string) {
+  const absoluteDir = path.resolve(dir);
+  const sep = path.sep;
+  absoluteDir.split(sep).reduce((parent, child) => {
+    const d = path.resolve(parent, child);
+    try {
+      if (!fs.existsSync(d)) {
+        fs.mkdirSync(d);
+      }
+    } catch (err) {
+      error(err);
+    }
+    return d;
+  }, "/");
 }
 
 function linkModule(linked: string, link: string) {
