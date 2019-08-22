@@ -77,10 +77,7 @@ documentation except the `exposed-modules` eventually found in forked or
 local packages included in the application `source-directories`.
 
 To customize the application, add an `elm-application.json` file and include
-any wanted field (extending `elm.json` was not possible because `elm install`
-will remove any unexpected field from it when run, and all the additional
-fields are currently unexpected for an application, even if they are correct
-for a package).
+any wanted field.
 
 For example, here is the
 [elm-application.json](https://github.com/dmy/elm-doc-preview/blob/master/elm-application.json)
@@ -176,6 +173,29 @@ process.on("SIGINT", () => process.exit(0));
 // listen(port = 8000, browser=true)
 server.listen();
 ```
+
+# FAQ
+
+## Why adding elm-application.json instead of using elm.json?
+Extending `elm.json` would not be convenient because `elm install`
+will remove any unexpected field from it when run, and all the additional
+fields used by `elm-doc-preview` are currently unexpected for an application,
+even if they are valid for a package.
+
+## Why my forked/local/vendored packages modules are not automatically documented?
+They are automatically added in the documentation if you kept the package
+`elm.json` file in the directory above the package `src` one.
+
+## How do I get my application `docs.json` file?
+By default, you can get your application `docs.json` file at the following
+address:
+
+http://localhost:8000/packages/my/application/1.0.0/docs.json
+
+If you added an `elm-application.json` file, replace `my/application` and
+`1.0.0` by the `name` and `version` fields value.
+
+Also replace `8000` by the port used if you changed it.
 
 # Credits
 
