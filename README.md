@@ -167,7 +167,7 @@ const DocServer = require('elm-doc-preview');
 // constructor(elm_json_dir = ".")
 const server = new DocServer();
 
-// Optionaly exit cleanly on SIGINT
+// Optionally exit cleanly on SIGINT
 process.on("SIGINT", () => process.exit(0));
 
 // listen(port = 8000, browser=true)
