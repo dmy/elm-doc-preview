@@ -276,14 +276,16 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): object
     "test-dependencies": {},
     timestamp: manifest.timestamp
   };
+
   // Add dependencies constraints
   if (manifest.dependencies.direct) {
     for (const [name, version] of Object.entries(manifest.dependencies.direct)) {
       pkg.dependencies[name] = versionToConstraint(version);
     }
   }
+
   // Add source directories exposed-modules
-  let exposed_modules: string[] = [];
+  let exposedModules: string[] = getExposedModules(pkg["exposed-modules"]);
 
   if (manifest["source-directories"]) {
     manifest["source-directories"].forEach(src => {
@@ -294,9 +296,9 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): object
       if (fs.existsSync(elmJsonPath)) {
         try {
           const srcManifest = getManifestSync(elmJsonPath);
-          if (srcManifest) {
-            const srcModules = getExposedModules(tmpDir.name, srcDir, srcManifest);
-            exposed_modules = exposed_modules.concat(srcModules);
+          if (srcManifest && srcManifest.type === "package") {
+            const srcModules = getExposedModules(srcManifest["exposed-modules"]);
+            exposedModules = exposedModules.concat(srcModules);
           }
         } catch (err) {
           error(err);
@@ -304,7 +306,7 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): object
       }
     });
   }
-  pkg["exposed-modules"] = exposed_modules;
+  pkg["exposed-modules"] = exposedModules;
 
   // Write elm.json and generate package documentation
   const elmJson = JSON.stringify(pkg);
@@ -316,19 +318,19 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): object
   return docs;
 }
 
-function getExposedModules(dstDir: string, srcDir: string, manifest: Manifest): string[] {
-  let exposed_modules: string[] = [];
+function getExposedModules(manifestExposedModules: string[] | Record<string, string[]> | null): string[] {
+  let exposedModules: string[] = [];
 
-  if (manifest["exposed-modules"]) {
-    if (Array.isArray(manifest["exposed-modules"])) {
-      exposed_modules = manifest["exposed-modules"];
-    } else if (typeof manifest["exposed-modules"] === "object") {
-      Object.values(manifest["exposed-modules"]).forEach(modules => {
-        exposed_modules = exposed_modules.concat(modules);
+  if (manifestExposedModules) {
+    if (Array.isArray(manifestExposedModules)) {
+      exposedModules = manifestExposedModules;
+    } else if (typeof manifestExposedModules === "object") {
+      Object.values(manifestExposedModules).forEach(modules => {
+        exposedModules = exposedModules.concat(modules);
       });
     }
   }
-  return exposed_modules;
+  return exposedModules;
 }
 
 function importModules(srcDir: string, dstDir: string) {
