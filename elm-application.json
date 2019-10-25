@@ -4,6 +4,7 @@
     "version": "3.0.0",
     "exposed-modules": [
         "Href",
+        "Main",
         "Session",
         "Page.Docs.Block",
         "Page.Search",
@@ -11,6 +12,7 @@
         "Page.Problem",
         "Page.Docs",
         "Page.Search.Entry",
+        "Ports",
         "Release",
         "Utils.Spinner",
         "Utils.OneOrMore",

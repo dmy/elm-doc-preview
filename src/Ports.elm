@@ -1,16 +1,21 @@
 port module Ports exposing
-    ( Docs
-    , Manifest
-    , Readme
+    ( Docs, Manifest, Readme
+    , onReadme, onDocs, onManifest
     , locationHrefRequested
-    , onDocs
-    , onManifest
-    , onReadme
     )
+
+{-|
+
+@docs Docs, Manifest, Readme
+@docs onReadme, onDocs, onManifest
+@docs locationHrefRequested
+
+-}
 
 import Json.Encode as Encode
 
 
+{-| -}
 type alias Readme =
     { author : String
     , project : String
@@ -19,6 +24,7 @@ type alias Readme =
     }
 
 
+{-| -}
 type alias Docs =
     { author : String
     , project : String
@@ -27,6 +33,7 @@ type alias Docs =
     }
 
 
+{-| -}
 type alias Manifest =
     { author : String
     , project : String
@@ -36,13 +43,17 @@ type alias Manifest =
     }
 
 
+{-| -}
 port onReadme : (Readme -> msg) -> Sub msg
 
 
+{-| -}
 port onDocs : (Docs -> msg) -> Sub msg
 
 
+{-| -}
 port onManifest : (Manifest -> msg) -> Sub msg
 
 
+{-| -}
 port locationHrefRequested : (String -> msg) -> Sub msg
