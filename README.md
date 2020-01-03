@@ -63,21 +63,22 @@ Application documentation is
 [not yet supported by Elm](https://github.com/elm/compiler/issues/1835#issuecomment-440080525),
 so `elm-doc-preview` will generate a package from the application with the same
 modules and build the documentation from it. There are two consequences:
-1. You have to define an `elm-application.json` file if you want to customize
-the application **name**, **summary**, **version** or **exposed-modules** that
-are included in the documentation.
+1. You have to define an `elm-application.json` file to list the application
+documented modules (**exposed-modules**) or to customize the application
+**name**, **summary** or **version** that are included in the documentation.
 2. The application ports will be stubbed with fake versions as ports are
 forbidden in packages. This means that ports will appear as normal functions in
 the documentation. Also currently, this requires ports declarations to be on
-one line, if this is an issue for you, please open a bug.
+one line, if this is an issue for you, please
+[open an issue](https://github.com/dmy/elm-doc-preview/issues).
 
 Without an `elm-application.json` file, `elm-doc-preview` will show an
-application as `my/application 1.0.0` and won't include any module in the
-documentation except the `exposed-modules` eventually found in forked or
+application as `my/application 1.0.0` and will report an error about
+missing `exposed-modules` unless some are eventually found in forked or
 local packages included in the application `source-directories`.
 
-To customize the application, add an `elm-application.json` file and include
-any wanted field.
+**To configure the application, add an `elm-application.json` file with at least
+an `exposed-modules` value.**
 
 For example, here is the
 [elm-application.json](https://github.com/dmy/elm-doc-preview/blob/master/elm-application.json)
@@ -196,6 +197,9 @@ If you added an `elm-application.json` file, replace `my/application` and
 `1.0.0` by the `name` and `version` fields value.
 
 Also replace `8000` by the port used if you changed it.
+
+## How to generate static web pages of the documentation
+This is not supported by elm-doc-preview, you could use [ento/elm-doc](https://github.com/ento/elm-doc) instead.
 
 # Credits
 
