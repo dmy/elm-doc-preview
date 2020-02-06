@@ -1,4 +1,4 @@
-.PHONY: all doc_server elm_js fix_identity minify clean
+.PHONY: all doc_server elm_js minify clean
 
 elm_js := static/js/elm.js
 css := static/css/elm-doc-preview.css
