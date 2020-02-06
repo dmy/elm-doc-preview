@@ -177,6 +177,17 @@ server.listen();
 
 # FAQ
 
+## Is elm-doc-preview secure enough to publicly host documentation?
+`elm-doc-preview` is a development tool and is not conceived to be
+exposed on internet. As such, no effort at all has been made to secure it
+and it most likely contains severe vulnerabilities. If you want to
+publicly share some documentation, use the online version or maybe host
+static web pages of the documentation (see below).
+
+## How to generate static web pages of the documentation
+This is not supported by `elm-doc-preview`, you could use [ento/elm-doc](https://github.com/ento/elm-doc) instead.
+
+
 ## Why adding elm-application.json instead of using elm.json?
 Extending `elm.json` would not be convenient because `elm install`
 will remove any unexpected field from it when run, and all the additional
@@ -197,9 +208,6 @@ If you added an `elm-application.json` file, replace `my/application` and
 `1.0.0` by the `name` and `version` fields value.
 
 Also replace `8000` by the port used if you changed it.
-
-## How to generate static web pages of the documentation
-This is not supported by elm-doc-preview, you could use [ento/elm-doc](https://github.com/ento/elm-doc) instead.
 
 # Credits
 
