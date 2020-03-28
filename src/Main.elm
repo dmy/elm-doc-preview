@@ -819,16 +819,11 @@ unslugify str =
 footer : Html msg
 footer =
     div [ class "footer" ]
-        [ span []
-            [ text "elm-doc-preview is "
-            , a
-                [ class "grey-link"
-                , href "https://github.com/dmy/elm-doc-preview"
-                ]
-                [ text "open source." ]
+        [ a
+            [ class "grey-link"
+            , href "https://github.com/dmy/elm-doc-preview"
             ]
-        , text " "
-        , span [] [ text "Copyright © 2019 Rémi Lefèvre." ]
+            [ text "dmy@2020" ]
         ]
 
 

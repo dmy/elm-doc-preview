@@ -124,12 +124,12 @@ pre {
 
 .grey-link {
   color: #bbbbbb;
-  text-decoration: underline;
   cursor: pointer;
 }
 
 .grey-link:hover {
   color: #bbbbbb;
+  text-decoration: underline;
 }
 
 
