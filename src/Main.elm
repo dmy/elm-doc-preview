@@ -693,14 +693,7 @@ navLinks source currentPage pages =
 
 pageLink : Source -> Page -> Page -> Html msg
 pageLink source currentPage targetPage =
-    li
-        [ case targetPage of
-            Readme _ ->
-                style "" ""
-
-            _ ->
-                style "margin-left" "10px"
-        ]
+    li []
         [ a
             [ class "pkg-nav-module"
             , href (pagePath targetPage ++ sourceQuery source)
