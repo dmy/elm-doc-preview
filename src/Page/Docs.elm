@@ -57,7 +57,7 @@ type alias Model =
     , latest : Status Version
     , readme : Status String
     , docs : Status Docs
-    , manifest : Status ( Time.Posix, Project )
+    , manifest : Status Project
     }
 
 
@@ -157,7 +157,7 @@ type Msg
     | GotReleases (Result Http.Error (OneOrMore Release.Release))
     | GotReadme Version (Result Http.Error String)
     | GotDocs Version (Result Http.Error Docs)
-    | GotManifest Version (Result Http.Error ( Time.Posix, Project ))
+    | GotManifest Version (Result Http.Error Project)
 
 
 {-| -}
@@ -281,7 +281,7 @@ updateDocs author project version docs model =
 
 
 {-| -}
-updateManifest : String -> String -> Version -> ( Time.Posix, Project ) -> Model -> Model
+updateManifest : String -> String -> Version -> Project -> Model -> Model
 updateManifest author project version manifest model =
     let
         newSession =
@@ -527,7 +527,7 @@ viewSidebar model =
             []
         , viewSidebarModules model
         , viewInstall model.manifest model.author model.project
-        , viewRelease model.manifest
+        , viewLicense model.manifest
         , viewDependencies model.manifest
         ]
 
@@ -718,10 +718,10 @@ navLink name url isBold =
 -- VIEW INSTALL
 
 
-viewInstall : Status ( Time.Posix, Project ) -> String -> String -> Html msg
+viewInstall : Status Project -> String -> String -> Html msg
 viewInstall manifest author project =
     case manifest of
-        Success ( releaseTime, Project.Package info ) ->
+        Success (Project.Package info) ->
             let
                 install =
                     "elm install " ++ author ++ "/" ++ project
@@ -741,13 +741,13 @@ viewInstall manifest author project =
 
 
 
--- VIEW RELEASE
+-- VIEW LICENSE
 
 
-viewRelease : Status ( Time.Posix, Project ) -> Html msg
-viewRelease manifest =
+viewLicense : Status Project -> Html msg
+viewLicense manifest =
     case manifest of
-        Success ( releaseTime, Project.Package info ) ->
+        Success (Project.Package info) ->
             let
                 licenseUrl =
                     Url.absolute
@@ -759,20 +759,7 @@ viewRelease manifest =
                         []
             in
             div []
-                [ h2 [] [ text "Release" ]
-                , div []
-                    [ nowrap []
-                        [ DateFormat.format
-                            [ DateFormat.monthNameFull
-                            , DateFormat.text " "
-                            , DateFormat.dayOfMonthNumber
-                            , DateFormat.text ", "
-                            , DateFormat.yearNumber
-                            ]
-                            Time.utc
-                            releaseTime
-                        ]
-                    ]
+                [ h2 [] [ text "License" ]
                 , div []
                     [ a [ href licenseUrl ]
                         [ nowrap []
@@ -796,17 +783,17 @@ nowrap attrs children =
 -- VIEW DEPENDENCIES
 
 
-viewDependencies : Status ( Time.Posix, Project ) -> Html msg
+viewDependencies : Status Project -> Html msg
 viewDependencies manifest =
     case manifest of
-        Success ( releaseTime, Project.Package info ) ->
+        Success (Project.Package info) ->
             div []
                 (h2 [] [ text "Dependencies" ]
                     :: viewElmVersion Constraint.toString info.elm
                     :: List.map viewDepConstraint info.deps
                 )
 
-        Success ( releaseTime, Project.Application info ) ->
+        Success (Project.Application info) ->
             div []
                 (h2 [] [ text "Dependencies" ]
                     :: viewElmVersion Version.toString info.elm

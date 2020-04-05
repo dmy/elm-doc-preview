@@ -22,12 +22,10 @@ import Elm.Error exposing (Error)
 import Elm.Project as Project exposing (Project)
 import Elm.Version as V
 import Http
-import Imf.DateTime
 import Json.Decode as Decode exposing (Decoder)
 import Page.Search.Entry as Entry
 import Parser
 import Release exposing (Release)
-import Time
 import Url.Builder as Url
 import Utils.OneOrMore exposing (OneOrMore(..))
 
@@ -42,7 +40,7 @@ type alias Data =
     , releases : Dict.Dict String (OneOrMore Release.Release)
     , readmes : Dict.Dict String String
     , docs : Dict.Dict String Docs
-    , manifests : Dict.Dict String ( Time.Posix, Project )
+    , manifests : Dict.Dict String Project
     , preview : Maybe Preview
     }
 
@@ -233,13 +231,13 @@ docsDecoder =
 
 
 {-| -}
-getManifest : Data -> String -> String -> V.Version -> Maybe ( Time.Posix, Project )
+getManifest : Data -> String -> String -> V.Version -> Maybe Project
 getManifest data author project version =
     Dict.get (toVsnKey author project version) data.manifests
 
 
 {-| -}
-addManifest : String -> String -> V.Version -> ( Time.Posix, Project ) -> Data -> Data
+addManifest : String -> String -> V.Version -> Project -> Data -> Data
 addManifest author project version manifest data =
     let
         newManifests =
@@ -250,7 +248,7 @@ addManifest author project version manifest data =
 
 {-| -}
 fetchManifest :
-    (Result Http.Error ( Time.Posix, Project ) -> msg)
+    (Result Http.Error Project -> msg)
     -> String
     -> String
     -> V.Version
@@ -258,50 +256,5 @@ fetchManifest :
 fetchManifest toMsg author project version =
     Http.get
         { url = Url.absolute [ "packages", author, project, V.toString version, "elm.json" ] []
-        , expect = expectProject toMsg
+        , expect = Http.expectJson toMsg Project.decoder
         }
-
-
-expectProject : (Result Http.Error ( Time.Posix, Project ) -> msg) -> Http.Expect msg
-expectProject toMsg =
-    Http.expectStringResponse toMsg <|
-        \response ->
-            case response of
-                Http.BadUrl_ url ->
-                    Err (Http.BadUrl url)
-
-                Http.Timeout_ ->
-                    Err Http.Timeout
-
-                Http.NetworkError_ ->
-                    Err Http.NetworkError
-
-                Http.BadStatus_ metadata body ->
-                    Err (Http.BadStatus metadata.statusCode)
-
-                Http.GoodStatus_ metadata body ->
-                    expectProjectHelp metadata body
-
-
-expectProjectHelp : Http.Metadata -> String -> Result Http.Error ( Time.Posix, Project )
-expectProjectHelp metadata body =
-    let
-        lastModified =
-            Dict.get "last-modified" metadata.headers
-                |> Result.fromMaybe
-                    [ { row = 1
-                      , col = 1
-                      , problem = Parser.Expecting "last-modified header"
-                      }
-                    ]
-                |> Result.andThen Imf.DateTime.toPosix
-    in
-    case ( lastModified, Decode.decodeString Project.decoder body ) of
-        ( Ok time, Ok value ) ->
-            Ok ( time, value )
-
-        ( Err deadEnds, Ok value ) ->
-            Ok ( Time.millisToPosix 0, value )
-
-        ( _, Err err ) ->
-            Err (Http.BadBody (Decode.errorToString err))

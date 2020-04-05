@@ -274,18 +274,13 @@ updateManifest : Ports.Manifest -> Model -> Model
 updateManifest { author, project, version, timestamp, manifest } model =
     case ( Version.fromString version, Decode.decodeValue Project.decoder manifest ) of
         ( Just v, Ok manifest_ ) ->
-            updatePageManifest
-                author
-                project
-                v
-                ( Time.millisToPosix timestamp, manifest_ )
-                model
+            updatePageManifest author project v manifest_ model
 
         _ ->
             model
 
 
-updatePageManifest : String -> String -> Version -> ( Time.Posix, Project ) -> Model -> Model
+updatePageManifest : String -> String -> Version -> Project -> Model -> Model
 updatePageManifest author project version manifest model =
     let
         newSession =
