@@ -21,8 +21,10 @@ function init() {
         pkgPath = dir;
       }
     })
+    .option("-b, --no-browser", "do not open in browser when server starts")
+    .option("-o, --output <docs.json>", "generate docs and exit with status code (/dev/null supported)")
     .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
-    .option("-n, --no-browser", "do not open in browser when server starts");
+    .option("-r, --no-reload", "disable hot reloading");
 
   program.on("--help", () => {
     console.log("");
@@ -56,7 +58,14 @@ function checkUpdate(currentVersion) {
 const program = init();
 checkUpdate(npmPackage.version);
 
-const docServer = new DocServer(program.dir);
+const options = {
+  dir: program.dir,
+  port: program.port,
+  browser: program.browser,
+  reload: program.reload,
+};
+
+const docServer = new DocServer(options);
 
 process
   .on("SIGINT", () => process.exit(0))
@@ -71,4 +80,9 @@ process
     process.exit(1);
   });
 
-docServer.listen(program.port, program.browser);
+
+if (program.output) {
+  docServer.make(program.output);
+} else {
+  docServer.listen();
+}

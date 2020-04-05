@@ -64,7 +64,7 @@ Application documentation is
 so `elm-doc-preview` will generate a package from the application with the same
 modules and build the documentation from it. There are two consequences:
 1. You have to define an `elm-application.json` file to list the application
-documented modules (**exposed-modules**) or to customize the application
+documented modules (**exposed-modules**) and to customize the application
 **name**, **summary** or **version** that are included in the documentation.
 2. The application ports will be stubbed with fake versions as ports are
 forbidden in packages. This means that ports will appear as normal functions in

@@ -29,6 +29,13 @@ tmp.setGracefulCleanup();
 express.static.mime.define({ "text/plain; charset=UTF-8": ["elm"] });
 express.static.mime.define({ "text/plain; charset=UTF-8": ["md"] });
 
+interface Options {
+  dir: string;
+  port: number;
+  browser: boolean;
+  reload: boolean;
+}
+
 interface Manifest {
   type: string;
   name?: string;
@@ -54,6 +61,7 @@ interface Package {
 
 type Release = Record<string, number>;
 type Elm = (args: string[], cwd?: string) => SpawnSyncReturns<Buffer>;
+type Output = object | object[];
 
 const npmPackage = require(path.join(__dirname, "../package.json"));
 
@@ -211,7 +219,7 @@ function merge(objects: object[]): object {
   return objects.reduce((acc, obj) => Object.assign(acc, obj));
 }
 
-function buildDocs(manifest: Manifest, dir: string, elm: Elm): object {
+function buildDocs(manifest: Manifest, dir: string, elm: Elm): Output {
   try {
     if (manifest.type == "package") {
       return buildPackageDocs(dir, elm);
@@ -225,7 +233,7 @@ function buildDocs(manifest: Manifest, dir: string, elm: Elm): object {
 }
 
 // Return a docs.json or a json error report
-function buildPackageDocs(dir: string, elm: Elm): object {
+function buildPackageDocs(dir: string, elm: Elm): Output {
   const tmpFile = tmp.fileSync({ prefix: "elm-docs-", postfix: ".json" });
   const buildDir = path.resolve(dir);
   info(`  |> building ${buildDir} documentation`);
@@ -248,7 +256,7 @@ function buildPackageDocs(dir: string, elm: Elm): object {
   return docs;
 }
 
-function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): object {
+function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm): Output {
   info(`  |> building ${path.resolve(dir)} documentation`);
   // Build package from application manifest
   const elmStuff = path.resolve(dir, "elm-stuff");
@@ -406,7 +414,7 @@ function versionToConstraint(version: string): string {
 }
 
 class DocServer {
-  dir: string;
+  options: Options;
   elm: Elm;
   elmVersion: string;
   elmCache: string;
@@ -416,13 +424,19 @@ class DocServer {
   manifest: Manifest | null;
   timeout: NodeJS.Timeout | null;
 
-  constructor(dir = ".") {
-    this.dir = fs.lstatSync(dir).isFile() ? path.dirname(dir) : dir;
+  constructor(options?: Options) {
+    const { dir = ".", port = 8000, browser = true, reload = true } = options || {};
     try {
       process.chdir(dir);
     } catch (err) {
       error(err);
     }
+    this.options = {
+      dir: fs.lstatSync(dir).isFile() ? path.dirname(dir) : dir,
+      port,
+      browser,
+      reload
+    };
     [this.elm, this.elmVersion] = getElm();
     this.elmCache = getElmCache(this.elmVersion);
     let app = express();
@@ -442,13 +456,13 @@ class DocServer {
         `from ${path.resolve(dir)}`);
     } else {
       info(
-        `No package or application found in ${this.dir},`,
+        `No package or application found in ${this.options.dir},`,
         "running documentation server only"
       );
     }
 
     this.setupWebServer();
-    if (this.manifest) {
+    if (this.manifest && this.options.reload) {
       this.setupFilesWatcher();
     }
   }
@@ -571,7 +585,7 @@ class DocServer {
     } else if (this.manifest) {
       glob.push("src/**/*.elm");
     }
-    const watcher = sane(this.dir, {
+    const watcher = sane(this.options.dir, {
       glob,
       ignored: ["**/node_modules", "**/elm-stuff"]
     });
@@ -616,7 +630,7 @@ class DocServer {
   }
 
   sendReadme() {
-    const readme = path.join(this.dir, "README.md");
+    const readme = path.join(this.options.dir, "README.md");
     if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
       const [author, project] = this.manifest.name.split("/", 2);
       try {
@@ -637,55 +651,70 @@ class DocServer {
   }
 
   sendManifest() {
-    if (this.manifest) {
-      if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
-        const [author, project] = this.manifest.name.split("/", 2);
-        info("  |>", "sending Manifest");
-        this.broadcast({
-          type: "manifest",
-          data: {
-            author: author,
-            project: project,
-            version: this.manifest.version,
-            docs: this.manifest
-          }
-        });
-      }
+    if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
+      const [author, project] = this.manifest.name.split("/", 2);
+      info("  |>", "sending Manifest");
+      this.broadcast({
+        type: "manifest",
+        data: {
+          author: author,
+          project: project,
+          version: this.manifest.version,
+          docs: this.manifest
+        }
+      });
     }
   }
 
   sendDocs() {
-    if (this.manifest) {
-      if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
-        const docs = buildDocs(this.manifest, this.dir, this.elm);
-        const [author, project] = this.manifest.name.split("/", 2);
-        info("  |>", "sending Docs");
-        this.broadcast({
-          type: "docs",
-          data: {
-            author: author,
-            project: project,
-            version: this.manifest.version,
-            time: this.manifest.timestamp,
-            docs: docs
-          }
-        });
-      }
+    if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
+      const docs = buildDocs(this.manifest, this.options.dir, this.elm);
+      const [author, project] = this.manifest.name.split("/", 2);
+      info("  |>", "sending Docs");
+      this.broadcast({
+        type: "docs",
+        data: {
+          author: author,
+          project: project,
+          version: this.manifest.version,
+          time: this.manifest.timestamp,
+          docs: docs
+        }
+      });
     }
   }
 
-  listen(port = 8000, browser = true) {
-    return this.app.listen(port, () => {
-      if (browser && this.manifest && this.manifest.name && this.manifest.version) {
-        open(`http://localhost:${port}/packages/${this.manifest.name}/${this.manifest.version}/`);
-      } else if (browser) {
-        open(`http://localhost:${port}`);
+  listen() {
+    return this.app.listen(this.options.port, () => {
+      if (this.options.browser && this.manifest && this.manifest.name && this.manifest.version) {
+        open(`http://localhost:${this.options.port}/packages/${this.manifest.name}/${this.manifest.version}/`);
+      } else if (this.options.browser) {
+        open(`http://localhost:${this.options.port}`);
       }
       info(
-        chalk`{blue Browse} {bold {green <http://localhost:${port.toString()}>}}`,
+        chalk`{blue Browse} {bold {green <http://localhost:${this.options.port.toString()}>}}`,
         chalk`{blue to see your documentation}`
       );
     });
+  }
+
+  make(filename: string) {
+    if (this.manifest) {
+      const docs = buildDocs(this.manifest, this.options.dir, this.elm);
+      info(`  |> writing documentation into ${filename}`)
+      if (Array.isArray(docs) && docs.length > 0) {
+        if (filename !== "/dev/null") {
+          try {
+            fs.writeFileSync(filename, JSON.stringify(docs), "utf8");
+          } catch (err) {
+            fatal(err);
+          }
+        }
+        process.exit(0);
+      } else {
+        fatal("failed to build project documentation");
+      }
+    }
   }
 
   broadcast(obj: object) {
