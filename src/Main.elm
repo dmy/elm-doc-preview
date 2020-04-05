@@ -965,17 +965,18 @@ update msg model =
 
 addUrlQuery : Model -> Url -> Cmd Msg
 addUrlQuery model url =
-    case ( url /= model.url, sourceQuery model.source ) of
-        ( False, _ ) ->
-            Cmd.none
+    let
+        newUrl =
+            { url | query = Just (String.dropLeft 1 <| sourceQuery model.source) }
+    in
+    if url == newUrl then
+        scrollToFragment url
 
-        ( True, "" ) ->
-            scrollToFragment url
-
-        ( True, query ) ->
-            Nav.replaceUrl model.navKey <|
-                Url.toString <|
-                    { url | query = Just (String.dropLeft 1 query) }
+    else
+        Cmd.batch
+            [ scrollToFragment url
+            , Nav.replaceUrl model.navKey <| Url.toString newUrl
+            ]
 
 
 setError : String -> Model -> Model
