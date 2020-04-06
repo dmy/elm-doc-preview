@@ -216,6 +216,7 @@ function merge(objects: object[]): object {
 }
 
 function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = true): Output {
+  info(`  |> building ${path.resolve(dir)} documentation`);
   try {
     if (manifest.type == "package") {
       return buildPackageDocs(dir, elm, clean);
@@ -232,7 +233,9 @@ function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = t
 function buildPackageDocs(dir: string, elm: Elm, clean: boolean): Output {
   const tmpFile = tmp.fileSync({ prefix: "elm-docs-", postfix: ".json" });
   const buildDir = path.resolve(dir);
-  info(`  |> building ${tmpFile.name} documentation`);
+  if (!clean) {
+    info(`  |> generating ${tmpFile.name} documentation`);
+  }
   const build = elm(["make", `--docs=${tmpFile.name}`, "--report=json"], buildDir);
   if (build.error) {
     error(`cannot build documentation (${build.error})`);
@@ -255,7 +258,6 @@ function buildPackageDocs(dir: string, elm: Elm, clean: boolean): Output {
 }
 
 function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean): Output {
-  info(`  |> building ${path.resolve(dir)} documentation`);
   // Build package from application manifest
   const elmStuff = path.resolve(dir, "elm-stuff");
   if (!fs.existsSync(elmStuff)) {
@@ -268,6 +270,10 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: 
   });
   const tmpDirSrc = path.resolve(tmpDir.name, "src");
   fs.mkdirSync(tmpDirSrc);
+
+  if (!clean) {
+    info(`  |> generating ${tmpDir.name} package`);
+  }
 
   // Build package manifest
   let pkg: Manifest = {
