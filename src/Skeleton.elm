@@ -66,7 +66,7 @@ projectSegment author project =
 {-| -}
 versionSegment : String -> String -> Maybe V.Version -> Segment
 versionSegment author project version =
-    Link (Href.toVersion author project version) (vsnToString version)
+    Link (Href.toVersion author project version Nothing) (vsnToString version)
 
 
 {-| -}

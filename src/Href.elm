@@ -21,15 +21,15 @@ toProject author project =
 
 
 {-| -}
-toVersion : String -> String -> Maybe V.Version -> String
-toVersion author project version =
-    Url.absolute [ "packages", author, project, vsnToString version, "" ] []
+toVersion : String -> String -> Maybe V.Version -> Maybe String -> String
+toVersion author project version fragment =
+    Url.custom Url.Absolute [ "packages", author, project, vsnToString version, "" ] [] fragment
 
 
 {-| -}
 toModule : String -> String -> Maybe V.Version -> String -> Maybe String -> String
-toModule author project version moduleName maybeValue =
-    Url.custom Url.Absolute [ "packages", author, project, vsnToString version, String.replace "." "-" moduleName ] [] maybeValue
+toModule author project version moduleName fragment =
+    Url.custom Url.Absolute [ "packages", author, project, vsnToString version, String.replace "." "-" moduleName ] [] fragment
 
 
 

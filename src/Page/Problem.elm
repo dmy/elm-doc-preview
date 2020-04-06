@@ -64,7 +64,7 @@ missingModule author project version name =
         , text "?"
         , br [] []
         , text "Maybe the "
-        , a [ href (Href.toVersion author project version) ] [ text "README" ]
+        , a [ href (Href.toVersion author project version Nothing) ] [ text "README" ]
         , text " will help you figure out what changed?"
         ]
     ]

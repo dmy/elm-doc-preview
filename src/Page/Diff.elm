@@ -152,7 +152,7 @@ viewReadmeLink : String -> String -> V.Version -> List (Attribute msg) -> Html m
 viewReadmeLink author project version attrs =
     let
         url =
-            Href.toVersion author project (Just version)
+            Href.toVersion author project (Just version) Nothing
     in
     a (href url :: attrs) [ text (V.toString version) ]
 

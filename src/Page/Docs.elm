@@ -63,7 +63,7 @@ type alias Model =
 
 {-| -}
 type Focus
-    = Readme
+    = Readme (Maybe String)
     | Module String (Maybe String)
 
 
@@ -135,12 +135,18 @@ getInfo latest model =
 
 scrollIfNeeded : Focus -> Cmd Msg
 scrollIfNeeded focus =
+    let
+        scrollToTag tag =
+            Dom.getElement tag
+                |> Task.andThen (\info -> Dom.setViewport 0 info.element.y)
+                |> Task.attempt ScrollAttempted
+    in
     case focus of
+        Readme (Just tag) ->
+            scrollToTag tag
+
         Module _ (Just tag) ->
-            Task.attempt ScrollAttempted
-                (Dom.getElement tag
-                    |> Task.andThen (\info -> Dom.setViewport 0 info.element.y)
-                )
+            scrollToTag tag
 
         _ ->
             Cmd.none
@@ -320,7 +326,7 @@ view model =
 toTitle : Model -> String
 toTitle model =
     case model.focus of
-        Readme ->
+        Readme _ ->
             toGenericTitle model
 
         Module name _ ->
@@ -396,8 +402,8 @@ toWarning model =
 toNewerUrl : Model -> String
 toNewerUrl model =
     case model.focus of
-        Readme ->
-            Href.toVersion model.author model.project Nothing
+        Readme tag ->
+            Href.toVersion model.author model.project Nothing tag
 
         Module name tag ->
             Href.toModule model.author model.project Nothing name tag
@@ -410,7 +416,7 @@ toNewerUrl model =
 viewContent : Model -> Html msg
 viewContent model =
     case model.focus of
-        Readme ->
+        Readme _ ->
             case model.docs of
                 Success (Error error) ->
                     lazy Utils.Error.view error
@@ -615,9 +621,9 @@ isTagMatch query toResult tipeName ( tagName, _ ) =
 
 viewReadmeLink : String -> String -> Maybe Version -> Focus -> Html msg
 viewReadmeLink author project version focus =
-    navLink "README" (Href.toVersion author project version) <|
+    navLink "README" (Href.toVersion author project version Nothing) <|
         case focus of
-            Readme ->
+            Readme _ ->
                 True
 
             Module _ _ ->
@@ -669,7 +675,7 @@ viewModuleLink model name =
     in
     navLink name url <|
         case model.focus of
-            Readme ->
+            Readme _ ->
                 False
 
             Module selectedName _ ->

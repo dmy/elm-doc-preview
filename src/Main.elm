@@ -396,8 +396,8 @@ version_ =
 focus_ : Parser (Docs.Focus -> a) a
 focus_ =
     oneOf
-        [ map Docs.Readme top
-        , map Docs.Module (moduleName_ </> fragment identity)
+        [ map Docs.Readme (top </> fragment (Maybe.andThen Url.percentDecode))
+        , map Docs.Module (moduleName_ </> fragment (Maybe.andThen Url.percentDecode))
         ]
 
 
