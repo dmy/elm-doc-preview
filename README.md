@@ -211,17 +211,6 @@ even if they are valid for a package.
 They are automatically added in the documentation if you kept the package
 `elm.json` file in the directory above the package `src` one.
 
-## How do I get my application `docs.json` file?
-By default, you can get your application `docs.json` file at the following
-address:
-
-http://localhost:8000/packages/my/application/1.0.0/docs.json
-
-If you added an `elm-application.json` file, replace `my/application` and
-`1.0.0` by the `name` and `version` fields value.
-
-Also replace `8000` by the port used if you changed it.
-
 # Credits
 
 - Documentation rendering from [package.elm-lang.org](https://github.com/elm/package.elm-lang.org) by Evan Czaplicki.
