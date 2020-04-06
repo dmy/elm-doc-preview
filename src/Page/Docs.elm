@@ -365,14 +365,6 @@ toHeader model =
     , Skeleton.projectSegment model.author model.project
     , Skeleton.versionSegment model.author model.project (getVersion model)
     ]
-        ++ (case model.focus of
-                Readme ->
-                    []
-
-                Module name _ ->
-                    [ Skeleton.moduleSegment model.author model.project model.version name
-                    ]
-           )
 
 
 
