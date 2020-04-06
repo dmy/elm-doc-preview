@@ -1,7 +1,7 @@
 {
     "name": "dmy/elm-doc-preview",
     "summary": "Offline documentation previewer",
-    "version": "4.0.0",
+    "version": "5.0.0",
     "exposed-modules": [
         "Href",
         "Main",
