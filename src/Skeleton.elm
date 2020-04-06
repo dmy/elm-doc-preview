@@ -162,7 +162,7 @@ viewWarning warning =
 
 viewFooter : Html msg
 viewFooter =
-    div [ class "footer" ] [ text "dmy©2019" ]
+    div [ class "footer" ] [ text "dmy©2020" ]
 
 
 
