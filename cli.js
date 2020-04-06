@@ -22,6 +22,7 @@ function init() {
       }
     })
     .option("-b, --no-browser", "do not open in browser when server starts")
+    .option("-d, --debug", "enable debug (display watched files and keep temporary files)")
     .option("-o, --output <docs.json>", "generate docs and exit with status code (/dev/null supported)")
     .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
     .option("-r, --no-reload", "disable hot reloading");
@@ -59,10 +60,11 @@ const program = init();
 checkUpdate(npmPackage.version);
 
 const options = {
+  browser: program.browser,
+  debug: program.debug,
   dir: program.dir,
   port: program.port,
-  browser: program.browser,
-  reload: program.reload,
+  reload: program.reload
 };
 
 

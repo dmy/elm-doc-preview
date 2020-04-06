@@ -38,7 +38,6 @@ type alias Manifest =
     { author : String
     , project : String
     , version : String
-    , timestamp : Int
     , manifest : Encode.Value
     }
 

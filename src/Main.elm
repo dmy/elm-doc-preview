@@ -271,7 +271,7 @@ updatePageDocs author project version docs model =
 
 
 updateManifest : Ports.Manifest -> Model -> Model
-updateManifest { author, project, version, timestamp, manifest } model =
+updateManifest { author, project, version, manifest } model =
     case ( Version.fromString version, Decode.decodeValue Project.decoder manifest ) of
         ( Just v, Ok manifest_ ) ->
             updatePageManifest author project v manifest_ model

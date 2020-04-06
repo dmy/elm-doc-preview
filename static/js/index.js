@@ -1,7 +1,7 @@
 new ClipboardJS('.copy-to-clipboard');
 var app = Elm.Main.init();
 
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
   if (e.button !== 0) {
     return true;
   }
@@ -38,8 +38,8 @@ ws.onmessage = function (event) {
       app.ports.onReadme.send(msg.data);
       break;
     case "manifest":
-      console.log(manifest);
       app.ports.onManifest.send(msg.data);
+      break;
     case "docs":
       app.ports.onDocs.send(msg.data);
       break;
