@@ -111,7 +111,7 @@ view toMsg details =
 viewHeader : List Segment -> Html msg
 viewHeader segments =
     div
-        [ style "background-color" "#eeeeee"
+        [ style "background-color" "#5fabdc"
         ]
         [ div [ class "center" ]
             [ h1 [ class "header" ] <|
@@ -175,5 +175,5 @@ viewLogo =
         [ href "/"
         , style "text-decoration" "none"
         ]
-        [ Logo.logo 30
+        [ Logo.logo 40
         ]

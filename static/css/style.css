@@ -90,14 +90,10 @@ a {
   text-decoration: none;
 }
 a:hover {
-  color: rgb(234, 21, 122);
   text-decoration: underline;
 }
 a .light {
   color: #5fabdc;
-}
-a:hover .light {
-  color: rgb(234, 21, 122);
 }
 
 pre {
@@ -130,23 +126,25 @@ pre {
 
 .header {
   display: flex;
-  padding: 10px 0;
-  color: #333333;
+  align-items: center;
+  padding: 0;
+  color: white;
   font-size: 24px;
   margin: 0;
   text-overflow: ellipsis;
+  min-height: 64px;
+}
+
+.header a {
+  color: white;
 }
 
 .header > a:first-of-type {
   margin-right: 20px;
 }
 
-.header a:hover {
-  color: #333333;
-}
-
 .header-underbar {
-  background-color: #60b5cc;
+  background-color: white;
   margin: 0;
   padding: 1px 0;
 }
@@ -155,11 +153,12 @@ pre {
   text-align: center;
   margin: 0;
   padding: 4px 0;
-  color: white;
+  color: black;
+  font-weight: bold;
 }
 
 .version-warning a {
-  color: white;
+  color: black;
   text-decoration: underline;
 }
 
@@ -174,16 +173,6 @@ pre {
   margin-top: 4em;
   border-top: 1px solid #eeeeee;
   padding: 16px 0;
-  color: #bbbbbb;
-}
-
-.grey-link {
-  color: #bbbbbb;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.grey-link:hover {
   color: #bbbbbb;
 }
 
