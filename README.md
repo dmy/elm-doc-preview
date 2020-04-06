@@ -15,7 +15,7 @@ any surprise when releasing a package.
 - Online documentation sharing for reviews (using the
  [online version](#online-version))
 
-![elm-doc-preview](https://github.com/dmy/elm-doc-preview/raw/fa63e1d/screenshots/elm-doc-preview.png)
+![elm-doc-preview](https://github.com/dmy/elm-doc-preview/raw/d3d19a2/screenshots/elm-doc-preview.png)
 
 # Installation
 
@@ -31,10 +31,11 @@ Usage: edp [options] [path_to_package_or_application]
 Options:
   -V, --version             output the version number
   -b, --no-browser          do not open in browser when server starts
+  -d, --debug               enable debug (display watched files and keep temporary files)
   -o, --output <docs.json>  generate docs and exit with status code (/dev/null supported)
   -p, --port <port>         the server listening port (default: 8000)
   -r, --no-reload           disable hot reloading
-  -h, --help                output usage information
+  -h, --help                display help for command
 
 Environment variables:
   ELM_HOME           Elm home directory (cache)
@@ -92,7 +93,7 @@ each field:
 {
     "name": "dmy/elm-doc-preview",
     "summary": "Offline documentation previewer",
-    "version": "3.0.0",
+    "version": "5.0.0",
     "exposed-modules": [
         "Href",
         "Session",
@@ -173,6 +174,7 @@ const DocServer = require('elm-doc-preview');
 
 // constructor(options) {
 //   const {
+//     debug = false,
 //     dir = ".",
 //     port = 8000,
 //     browser = true,
