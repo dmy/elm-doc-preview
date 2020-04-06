@@ -545,7 +545,7 @@ viewSidebarModules model =
             else
                 let
                     query =
-                        String.toLower model.query
+                        model.query |> String.toLower |> String.trim
                 in
                 ul [] (List.filterMap (viewSearchItem model query) modules)
 
