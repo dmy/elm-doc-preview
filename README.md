@@ -149,10 +149,6 @@ Typically, to import a forked package and keep its documentation, just clone it
 in the application directory, and add the forked packages `src` sub-directory
 in `elm.json` `source-directories`.
 
-See the
-[project-metadata-utils](https://github.com/dmy/elm-doc-preview/tree/master/project-metadata-utils)
-fork inside `elm-doc-preview` for an example.
-
 
 # Online version
 
