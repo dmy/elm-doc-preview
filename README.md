@@ -15,7 +15,7 @@ any surprise when releasing a package.
 - Online documentation sharing for reviews (using the
  [online version](#online-version))
 
-![elm-doc-preview](https://github.com/dmy/elm-doc-preview/raw/c2c8c14d/screenshots/elm-doc-preview.png)
+![elm-doc-preview](https://github.com/dmy/elm-doc-preview/raw/fa63e1d/screenshots/elm-doc-preview.png)
 
 # Installation
 
@@ -25,14 +25,16 @@ $ npm install -g elm-doc-preview
 
 # Synopsis
 
-```
-Usage: edp|elm-doc-preview [options] [path_to_package_or_application]
+```text
+Usage: edp [options] [path_to_package_or_application]
 
 Options:
-  -V, --version      output the version number
-  -p, --port <port>  the server listening port (default: 8000)
-  -n, --no-browser   do not open in browser when server starts
-  -h, --help         output usage information
+  -V, --version             output the version number
+  -b, --no-browser          do not open in browser when server starts
+  -o, --output <docs.json>  generate docs and exit with status code (/dev/null supported)
+  -p, --port <port>         the server listening port (default: 8000)
+  -r, --no-reload           disable hot reloading
+  -h, --help                output usage information
 
 Environment variables:
   ELM_HOME           Elm home directory (cache)
@@ -46,7 +48,7 @@ $ elm-doc-preview
 
 or
 
-```
+```sh
 $ edp
 ```
 
@@ -164,21 +166,32 @@ It does not support hot-reloading or dependencies documentation though.
 # API
 ```javascript
 const DocServer = require('elm-doc-preview');
-
-// constructor(elm_json_dir = ".")
 const server = new DocServer();
+server.listen();
+```
 
-// Optionally exit cleanly on SIGINT
-process.on("SIGINT", () => process.exit(0));
+or with custom options:
 
-// listen(port = 8000, browser=true)
+```javascript
+const DocServer = require('elm-doc-preview');
+
+// constructor(options) {
+//   const {
+//     dir = ".",
+//     port = 8000,
+//     browser = true,
+//     reload = true
+//   } = options || {};
+//   ...
+const server = new DocServer({ port: 9000, browser: false });
+
 server.listen();
 ```
 
 # FAQ
 
 ## Is elm-doc-preview secure enough to publicly host documentation?
-`elm-doc-preview` is a development tool and is not conceived to be
+`elm-doc-preview` is a development tool and is not designed to be
 exposed on internet. As such, no effort at all has been made to secure it
 and it most likely contains severe vulnerabilities. If you want to
 publicly share some documentation, use the online version or maybe host
