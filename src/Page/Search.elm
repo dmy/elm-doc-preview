@@ -196,16 +196,16 @@ viewEntryHelp ({ author, project, summary } as entry) =
                     , text project
                     ]
                 ]
-            , viewExactVersions entry
+            , viewVersions entry
             ]
         , p [ class "pkg-summary-desc" ] [ text summary ]
         ]
 
 
-viewExactVersions : Entry.Entry -> Html msg
-viewExactVersions entry =
+viewVersions : Entry.Entry -> Html msg
+viewVersions entry =
     span [ class "pkg-summary-hints" ] <|
-        case entry.versions of
+        case List.reverse entry.versions of
             [ v ] ->
                 [ a
                     [ href (Href.toVersion entry.author entry.project (Just v) Nothing) ]
