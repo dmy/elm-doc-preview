@@ -41,7 +41,7 @@ getLatestVersionHelp releases maxRelease =
 
         release :: otherReleases ->
             getLatestVersionHelp otherReleases <|
-                if Time.posixToMillis release.time > Time.posixToMillis maxRelease.time then
+                if V.compare release.version maxRelease.version == GT then
                     release
 
                 else

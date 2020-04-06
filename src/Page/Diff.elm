@@ -117,7 +117,7 @@ view model =
                 , p [] <|
                     viewReleases model.author model.project <|
                         List.map .version
-                            (List.sortBy (Time.posixToMillis << .time) (r :: rs))
+                            (List.sortWith (\a b -> V.compare a.version b.version) (r :: rs))
                 ]
     }
 
