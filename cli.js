@@ -65,7 +65,6 @@ const options = {
   reload: program.reload,
 };
 
-const docServer = new DocServer(options);
 
 process
   .on("SIGINT", () => process.exit(0))
@@ -80,6 +79,7 @@ process
     process.exit(1);
   });
 
+const docServer = new DocServer(options);
 
 if (program.output) {
   docServer.make(program.output);
