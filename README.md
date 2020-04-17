@@ -28,7 +28,7 @@ $ npm install -g elm-doc-preview
 npm WARN ws@7.2.3 requires a peer of bufferutil@^4.0.1 but none is installed. You must install peer dependencies yourself.
 npm WARN ws@7.2.3 requires a peer of utf-8-validate@^5.0.2 but none is installed. You must install peer dependencies yourself.
 ```
-They are optional, provide marginal websockets optimizations for elm-doc-preview use case, and can be ignored.
+They are optional, provide marginal websockets optimizations for `elm-doc-preview` use case, and can be ignored.
 # Synopsis
 
 ```text
