@@ -1,7 +1,7 @@
 {
   "name": "elm-doc-preview",
   "dependencies": {
-    "chalk": "^4.0.0",
+    "chalk": "^3.0.0",
     "chokidar": "^3.3.1",
     "commander": "^5.0.0",
     "cross-spawn": "^7.0.2",
