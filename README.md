@@ -23,10 +23,16 @@ any surprise when releasing a package.
 $ npm install -g elm-doc-preview
 ```
 
+`npm` may warn about missing peer dependencies:
+```
+npm WARN ws@7.2.3 requires a peer of bufferutil@^4.0.1 but none is installed. You must install peer dependencies yourself.
+npm WARN ws@7.2.3 requires a peer of utf-8-validate@^5.0.2 but none is installed. You must install peer dependencies yourself.
+```
+They are optional, provide marginal websockets optimizations for elm-doc-preview use case, and can be ignored.
 # Synopsis
 
 ```text
-Usage: edp [options] [path_to_package_or_application]
+Usage: edp|elm-doc-preview [options] [path_to_package_or_application]
 
 Options:
   -V, --version             output the version number
