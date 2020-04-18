@@ -198,7 +198,7 @@ server.listen();
 `elm-doc-preview` is a development tool and is not designed to be
 exposed on internet. As such, no effort at all has been made to secure it
 and it most likely contains severe vulnerabilities. If you want to
-publicly share some documentation, use the online version or maybe host
+publicly share some documentation, use the [online version](#online-version) or maybe host
 static web pages of the documentation (see below).
 
 ## How to generate static web pages of the documentation
