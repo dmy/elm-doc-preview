@@ -44,7 +44,7 @@
     "url": "https://github.com/dmy/elm-doc-preview/issues"
   },
   "homepage": "https://github.com/dmy/elm-doc-preview#readme",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "bin": {
     "elm-doc-preview": "./cli.js",
     "edp": "./cli.js"
