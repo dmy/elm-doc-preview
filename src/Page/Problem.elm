@@ -44,7 +44,6 @@ offline file =
         [ text "Cannot find "
         , code [] [ text file ]
         ]
-    , p [] [ text "Are you offline or something?" ]
     ]
 
 
