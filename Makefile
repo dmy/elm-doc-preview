@@ -1,4 +1,4 @@
-.PHONY: all doc_server elm_js minify clean
+.PHONY: all elm_js minify clean publish
 
 elm_js := static/js/elm.js
 css := static/css/elm-doc-preview.css
@@ -24,3 +24,6 @@ minify:
 
 clean:
 	rm -f $(elm_js) $(css)
+
+publish: all
+	npm publish
