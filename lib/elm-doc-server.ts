@@ -140,12 +140,13 @@ function getManifestSync(manifestPath: string): Manifest | null {
   }
 }
 
-function completeApplication(manifestPath: string, manifest: Manifest): Manifest {
+function completeApplication(manifestPath: string, manifest: any): Manifest {
   if (manifest.type !== "application") {
     return manifest;
   }
+  const dir = path.dirname(manifestPath);
   try {
-    const elmAppPath = path.resolve(path.dirname(manifestPath), "elm-application.json");
+    const elmAppPath = path.resolve(dir, "elm-application.json");
     if (fs.existsSync(elmAppPath)) {
       const elmApp = JSON.parse(fs.readFileSync(elmAppPath).toString());
       Object.assign(manifest, elmApp);
@@ -164,6 +165,21 @@ function completeApplication(manifestPath: string, manifest: Manifest): Manifest
   }
   if (!("license" in manifest)) {
     manifest.license = "Fair";
+  }
+  if (!("exposed-modules" in manifest) &&
+    "source-directories" in manifest &&
+    manifest["source-directories"].length > 0) {
+
+    const sourceDirs: string[] = manifest["source-directories"];
+    manifest["exposed-modules"] =
+      sourceDirs
+        .map(srcDir => {
+          // get the module names from the relative elm file paths
+          return glob.sync(`**/*.elm`, { cwd: path.resolve(dir, srcDir) }).
+            map(str => str.slice(0, str.length - 4).replace(/\//g, '.'))
+        })
+        .reduce((a, b) => a.concat(b)) //flatten the array
+        .sort();
   }
   return manifest;
 }
