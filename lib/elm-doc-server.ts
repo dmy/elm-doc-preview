@@ -358,7 +358,7 @@ function importModules(srcDir: string, dstDir: string) {
       if (module.match(/^port +module /) !== null) {
         // Stub ports by subscriptions and commands that do nothing
         info(`  |> stubbing ${elm} ports`);
-        module = module.replace(/^port +([^ :]+)([^\n]+)$/mg, (match, name, decl, off, str) => {
+        module = module.replace(/^port +([^ :]+)([^\n]+)$/mg, (match, name, decl, _off, _str) => {
           if (name === "module") {
             return ["module", decl].join(" ");
           } else if (decl.includes("Sub")) {
@@ -491,13 +491,13 @@ class DocServer {
     });
 
     // preview
-    this.app.get("/preview", (req, res) => {
+    this.app.get("/preview", (_req, res) => {
       if (this.manifest) {
         res.json(this.manifest);
       }
     });
     // search.json
-    this.app.get("/search.json", (req, res) => {
+    this.app.get("/search.json", (_req, res) => {
       Promise.all([`${this.elmCache}/*/*/*`, "."]
         .map(pattern => searchPackages(pattern)))
         .then(packagesArray => {
@@ -558,7 +558,7 @@ class DocServer {
       }
     });
 
-    let setHeaders = (res: express.Response, path: string, stat: any) => {
+    let setHeaders = (res: express.Response, path: string, _stat: any) => {
       if (path.endsWith("/LICENSE")) {
         res.setHeader("Content-Type", "text/plain; charset=UTF-8");
       }
@@ -577,7 +577,7 @@ class DocServer {
     );
 
     // default route
-    this.app.get("*", (req, res) => {
+    this.app.get("*", (_req, res) => {
       res.sendFile(path.join(__dirname, "../static/index.html"));
     });
   }
@@ -601,7 +601,7 @@ class DocServer {
     });
 
     watcher
-      .on("all", (event, filepath) => this.onChange(filepath))
+      .on("all", (_event, filepath) => this.onChange(filepath))
       .on("error", err => error(err))
       .on("ready", () => {
         if (this.manifest && this.manifest.type === "package") {
