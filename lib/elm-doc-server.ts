@@ -80,9 +80,8 @@ function fatal(...args: any[]) {
 }
 
 
-function elmFatalErrors(error:any) {
+function elmErrors(error:any) {
   console.log(elmErrorWithColor(error.errors));
-  process.exit(1);
 }
 
 
@@ -326,7 +325,7 @@ function buildPackageDocs(dir: string, elm: Elm, clean: boolean): Output {
   if (build.error) {
     error(`cannot build documentation (${build.error})`);
   } else if (build.stderr.toString().length > 0) {
-    elmFatalErrors(JSON.parse(build.stderr.toString()))
+    elmErrors(JSON.parse(build.stderr.toString()))
   }
   let docs;
   try {
