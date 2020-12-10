@@ -80,33 +80,33 @@ function fatal(...args: any[]) {
 }
 
 
-function elmErrors(error:any) {
+function elmErrors(error: any) {
   console.log(elmErrorWithColor(error.errors));
 }
 
 
 type Error = {
-  path : string
-  problems: Problem[]
+  path: string;
+  problems: Problem[];
 }
 
 type Problem = {
-  title : string
-  message : (Message | string)[]
+  title: string;
+  message: (Message | string)[];
 }
 
 type Message = {
-  bold : boolean
-  underline : boolean
-  color : string,
-  string : string
+  bold: boolean;
+  underline: boolean;
+  color: string;
+  string: string;
 }
 
 const elmErrorWithColor = (errors: Error[]) => {
-  const repeat = (str : string, num : number, min = 3) => [...Array(num < 0 ? min : num)].map(_ => str).join('')
+  const repeat = (str: string, num: number, min = 3) => [...Array(num < 0 ? min : num)].map(_ => str).join('')
 
-  const errorToString = (error : Error) : string => {
-    const problemToString = (problem : Problem) : string => {
+  const errorToString = (error: Error): string => {
+    const problemToString = (problem: Problem): string => {
       // Removing the elm-stuff/generatedFolderName from the beginning of the filepath
       let errorPath = error.path.substr(process.cwd().length + 1).split(path.sep)
       errorPath.shift()
@@ -119,15 +119,15 @@ const elmErrorWithColor = (errors: Error[]) => {
         problem.message.map(messageToString).join('')
       ].join('\n\n')
     }
-    
-    const messageToString = (line : Message | string) => {
+
+    const messageToString = (line: Message | string) => {
       if (typeof line === 'string') {
         return line
       } else {
         let message = line.string;
         if (line.bold) {
           message = chalk.bold(message);
-        } 
+        }
         if (line.underline) {
           message = chalk.underline(message);
         }
@@ -148,14 +148,14 @@ const elmErrorWithColor = (errors: Error[]) => {
             message = chalk.red(message)
             break;
 
-          default: 
+          default:
             break;
         }
 
         return message
       }
     }
-     
+
 
     return error.problems.map(problemToString).join('\n\n')
   }
@@ -541,9 +541,7 @@ class DocServer {
     this.manifest = getManifestSync("elm.json");
 
     info(
-      chalk`{bold elm-doc-preview ${npmPackage.version}} using elm ${
-        this.elmVersion
-        }`
+      chalk`{bold elm-doc-preview ${npmPackage.version}} using elm ${this.elmVersion}`
     );
     if (this.manifest && this.manifest.name && this.manifest.version) {
       info(chalk`Previewing {magenta ${this.manifest.name} ${this.manifest.version}}`,
