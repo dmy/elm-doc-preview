@@ -79,6 +79,91 @@ function fatal(...args: any[]) {
   process.exit(1);
 }
 
+
+function elmErrors(error:any) {
+  console.log(elmErrorWithColor(error.errors));
+}
+
+
+type Error = {
+  path : string
+  problems: Problem[]
+}
+
+type Problem = {
+  title : string
+  message : (Message | string)[]
+}
+
+type Message = {
+  bold : boolean
+  underline : boolean
+  color : string,
+  string : string
+}
+
+const elmErrorWithColor = (errors: Error[]) => {
+  const repeat = (str : string, num : number, min = 3) => [...Array(num < 0 ? min : num)].map(_ => str).join('')
+
+  const errorToString = (error : Error) : string => {
+    const problemToString = (problem : Problem) : string => {
+      // Removing the elm-stuff/generatedFolderName from the beginning of the filepath
+      let errorPath = error.path.substr(process.cwd().length + 1).split(path.sep)
+      errorPath.shift()
+      errorPath.shift()
+
+      const errorFilePath = errorPath.join(path.sep)
+
+      return [
+        chalk.cyan(`-- ${problem.title} ${repeat('-', 63 - problem.title.length - errorFilePath.length)} ${errorFilePath}`),
+        problem.message.map(messageToString).join('')
+      ].join('\n\n')
+    }
+    
+    const messageToString = (line : Message | string) => {
+      if (typeof line === 'string') {
+        return line
+      } else {
+        let message = line.string;
+        if (line.bold) {
+          message = chalk.bold(message);
+        } 
+        if (line.underline) {
+          message = chalk.underline(message);
+        }
+        switch (line.color) {
+          case 'green':
+            message = chalk.green(message);
+            break;
+
+          case 'yellow':
+            message = chalk.yellow(message)
+            break;
+
+          case 'cyan':
+            message = chalk.cyan(message)
+            break;
+
+          case 'RED':
+            message = chalk.red(message)
+            break;
+
+          default: 
+            break;
+        }
+
+        return message
+      }
+    }
+     
+
+    return error.problems.map(problemToString).join('\n\n')
+  }
+  return errors.map(errorToString).join('\n\n\n')
+}
+
+
+
 /*
  * Find and check Elm executable
  */
@@ -215,13 +300,13 @@ function merge(objects: object[]): object {
   return objects.reduce((acc, obj) => Object.assign(acc, obj));
 }
 
-function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = true): Output {
+function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = true, verbose: boolean = false): Output {
   info(`  |> building ${path.resolve(dir)} documentation`);
   try {
     if (manifest.type == "package") {
-      return buildPackageDocs(dir, elm, clean);
+      return buildPackageDocs(dir, elm, clean, verbose);
     } else if (manifest.type == "application") {
-      return buildApplicationDocs(manifest, dir, elm, clean);
+      return buildApplicationDocs(manifest, dir, elm, clean, verbose);
     }
   } catch (err) {
     error(err);
@@ -230,7 +315,7 @@ function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = t
 }
 
 // Return a docs.json or a json error report
-function buildPackageDocs(dir: string, elm: Elm, clean: boolean): Output {
+function buildPackageDocs(dir: string, elm: Elm, clean: boolean, verbose: boolean): Output {
   const tmpFile = tmp.fileSync({ prefix: "elm-docs-", postfix: ".json" });
   const buildDir = path.resolve(dir);
   if (!clean) {
@@ -239,6 +324,8 @@ function buildPackageDocs(dir: string, elm: Elm, clean: boolean): Output {
   const build = elm(["make", `--docs=${tmpFile.name}`, "--report=json"], buildDir);
   if (build.error) {
     error(`cannot build documentation (${build.error})`);
+  } else if (build.stderr.toString().length > 0 && verbose) {
+    elmErrors(JSON.parse(build.stderr.toString()))
   }
   let docs;
   try {
@@ -257,7 +344,7 @@ function buildPackageDocs(dir: string, elm: Elm, clean: boolean): Output {
   return docs;
 }
 
-function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean): Output {
+function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean, verbose: boolean): Output {
   // Build package from application manifest
   const elmStuff = path.resolve(dir, "elm-stuff");
   if (!fs.existsSync(elmStuff)) {
@@ -323,7 +410,7 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: 
   // Write elm.json and generate package documentation
   const elmJson = JSON.stringify(pkg);
   fs.writeFileSync(tmpDir.name + "/elm.json", elmJson, "utf8");
-  const docs = buildPackageDocs(tmpDir.name, elm, clean);
+  const docs = buildPackageDocs(tmpDir.name, elm, clean, verbose);
 
   // remove temporary directory
   if (clean) {
@@ -700,7 +787,7 @@ class DocServer {
 
   make(filename: string) {
     if (this.manifest) {
-      const docs = buildDocs(this.manifest, this.options.dir, this.elm, !this.options.debug);
+      const docs = buildDocs(this.manifest, this.options.dir, this.elm, !this.options.debug, true);
       info(`  |> writing documentation into ${filename}`)
       if (Array.isArray(docs) && docs.length > 0) {
         if (filename !== "/dev/null") {
