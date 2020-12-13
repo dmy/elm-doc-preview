@@ -71,23 +71,19 @@ offline documentation server for local cached packages.
 Application documentation is
 [not yet supported by Elm](https://github.com/elm/compiler/issues/1835#issuecomment-440080525),
 so `elm-doc-preview` will generate a package from the application with the same
-modules and build the documentation from it. There are two consequences:
-1. You have to define an `elm-application.json` file to list the application
-documented modules (**exposed-modules**) and to customize the application
+modules and build the documentation from it. By default:
+
+- All modules in your `elm.json` `source-directories` will be exposed
+- The application name will be `my/application`
+- The version will be `1.0.0`
+
+## Overriding defaults
+
+If you do not want all modules exposed, you have to define an `elm-application.json` file to list the application
+documented modules (**exposed-modules**). You may also customize the application
 **name**, **summary** or **version** that are included in the documentation.
-2. The application ports will be stubbed with fake versions as ports are
-forbidden in packages. This means that ports will appear as normal functions in
-the documentation. Also currently, this requires ports declarations to be on
-one line, if this is an issue for you, please
-[open an issue](https://github.com/dmy/elm-doc-preview/issues).
 
-Without an `elm-application.json` file, `elm-doc-preview` will show an
-application as `my/application 1.0.0` and will report an error about
-missing `exposed-modules` unless some are eventually found in forked or
-local packages included in the application `source-directories`.
 
-**To configure the application, add an `elm-application.json` file with at least
-an `exposed-modules` value.**
 
 For example, here is the
 [elm-application.json](https://github.com/dmy/elm-doc-preview/blob/master/elm-application.json)
@@ -120,32 +116,20 @@ each field:
     ]
 }
 ```
-#### **"name"**
-It should use the same `author/project` format than packages, but the
-repository does not have to exist on GitHub.
+| Property  | Description | Default |
+| ------------- | ------------- | ------------- |
+| **name**  | It should use the same `author/project` format than packages, but the repository does not have to exist on GitHub. | "my/application"|
+| **summary**  | A short summary for the application in less than 80 characters  | "Elm application"|
+| **version** | A version using `MAJOR.MINOR.PATCH` format | "1.0.0"|
+| **exposed-modules** | The modules to include in the documentation. All exposed symbols inside these modules must be documented or the documentation build will fail. Port modules will be shown as normal modules. | Modules in the `elm.json` `source-directories` (overridable), and modules in forked and local packages (*not* overridable, see next section) |
 
-The default name is `my/application`.
+## Ports
 
-#### **"summary"**
-A short summary for the application in less than 80 characters.
-
-The default summary is "Elm application".
-
-#### **"version"**
-A version using `MAJOR.MINOR.PATCH` format.
-
-The default version is "1.0.0".
-
-#### **"exposed-modules"**
-The modules to include in the documentation.
-All exposed symbols inside these modules must be documented or the
-documentation build will fail.
-
-Port modules will be shown as normal modules.
-
-Exposed modules contain by default those found in forked and local
-packages (see next section). Setting the field does not remove those
-modules from the list.
+The application ports will be stubbed with fake versions as ports are
+forbidden in packages. This means that ports will appear as normal functions in
+the documentation. Also currently, this requires ports declarations to be on
+one line, if this is an issue for you, please
+[open an issue](https://github.com/dmy/elm-doc-preview/issues).
 
 # Forked and local packages in applications
 `elm-doc-preview` will automatically exposes documentation for forked or local
