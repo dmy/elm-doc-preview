@@ -5,6 +5,8 @@ static/js/elm.js
 static/css/elm-doc-preview.css
 lib/elm-doc-server.js
 lib/elm-doc-server.js.map
+lib/elm-doc-server.d.ts
+lib/version.js
 *.swp
 *.swo
 *~

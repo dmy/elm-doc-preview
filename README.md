@@ -162,13 +162,13 @@ in `elm.json` `source-directories`.
 There is also an online version supporting documentations loading from github
 to share them for online reviews:
 
-https://elm-doc-preview.netlify.com
+https://elm-doc-preview.netlify.app
 
 It does not support hot-reloading or dependencies documentation though.
 
 # API
 ```javascript
-const DocServer = require('elm-doc-preview');
+import DocServer from "elm-doc-preview";
 const server = new DocServer();
 server.listen();
 ```
@@ -176,7 +176,7 @@ server.listen();
 or with custom options:
 
 ```javascript
-const DocServer = require('elm-doc-preview');
+import DocServer from "elm-doc-preview";
 
 // constructor(options) {
 //   const {

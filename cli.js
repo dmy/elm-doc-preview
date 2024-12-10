@@ -1,29 +1,34 @@
 #!/usr/bin/env node
 
-const path = require("path");
-const chalk = require("chalk");
-const commander = require("commander");
-const latestVersion = require("latest-version");
-const DocServer = require("./lib/elm-doc-server");
-
-const npmPackage = require(path.join(__dirname, "package.json"));
+import chalk from "chalk";
+import { Command } from "commander";
+import latestVersion from "latest-version";
+import DocServer from "./lib/elm-doc-server.js";
+import { version } from "./lib/version.js";
 
 /*
  * Program options and usage
  */
 function init() {
   let pkgPath = ".";
-  const program = commander
-    .version(npmPackage.version)
+  const program = new Command();
+  program
+    .version(version)
     .arguments("[path_to_package_or_application]")
-    .action(dir => {
+    .action((dir) => {
       if (dir !== undefined) {
         pkgPath = dir;
       }
     })
     .option("-b, --no-browser", "do not open in browser when server starts")
-    .option("-d, --debug", "enable debug (display watched files and keep temporary files)")
-    .option("-o, --output <docs.json>", "generate docs and exit with status code (/dev/null supported)")
+    .option(
+      "-d, --debug",
+      "enable debug (display watched files and keep temporary files)"
+    )
+    .option(
+      "-o, --output <docs.json>",
+      "generate docs and exit with status code (/dev/null supported)"
+    )
     .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
     .option("-r, --no-reload", "disable hot reloading");
 
@@ -43,34 +48,27 @@ function init() {
  */
 function checkUpdate(currentVersion) {
   latestVersion("elm-doc-preview")
-    .then(lastVersion => {
+    .then((lastVersion) => {
       if (lastVersion !== currentVersion) {
         console.log(
           chalk.yellow(`elm-doc-preview ${lastVersion} is available`)
         );
       }
     })
-    .catch(() => { });
+    .catch(() => {});
 }
 
 /*
  * Run program
  */
 const program = init();
-checkUpdate(npmPackage.version);
+checkUpdate(version);
 
-const options = {
-  browser: program.browser,
-  debug: program.debug,
-  dir: program.dir,
-  port: program.port,
-  reload: program.reload
-};
-
+const options = program.opts();
 
 process
   .on("SIGINT", () => process.exit(0))
-  .on("uncaughtException", e => {
+  .on("uncaughtException", (e) => {
     if (e.errno === "EADDRINUSE") {
       console.log(
         chalk.red(`port ${program.port} already used, use --port option`)
@@ -83,8 +81,8 @@ process
 
 const docServer = new DocServer(options);
 
-if (program.output) {
-  docServer.make(program.output);
+if (options.output) {
+  docServer.make(options.output);
 } else {
   docServer.listen();
 }

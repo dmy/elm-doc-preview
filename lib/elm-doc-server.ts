@@ -10,13 +10,14 @@ import serveIndex from "serve-index";
 import expressWs from "express-ws";
 import ws from "ws";
 import { SpawnSyncReturns } from "child_process";
-import glob from "glob";
+import { glob, globSync } from "glob";
 import chokidar from "chokidar";
 import open from "open";
+import { fileURLToPath } from "url";
+import { version } from "./version.js";
 
 import util from "util";
 const readFileAsync = util.promisify(fs.readFile);
-const globAsync = util.promisify(glob);
 const statAsync = util.promisify(fs.stat);
 
 tmp.setGracefulCleanup();
@@ -41,7 +42,9 @@ interface Manifest {
   "exposed-modules": string[] | Record<string, string[]>;
   "elm-version": string;
   dependencies: Record<string, string> | Record<string, Record<string, string>>;
-  "test-dependencies": Record<string, string> | Record<string, Record<string, string>>;
+  "test-dependencies":
+    | Record<string, string>
+    | Record<string, Record<string, string>>;
   "source-directories"?: string[];
 
   // dynamically added for convenience
@@ -58,8 +61,6 @@ interface Package {
 type Release = Record<string, number>;
 type Elm = (args: string[], cwd?: string) => SpawnSyncReturns<Buffer>;
 type Output = object | object[];
-
-const npmPackage = require(path.join(__dirname, "../package.json"));
 
 function info(...args: any[]) {
   console.log(...args);
@@ -79,50 +80,56 @@ function fatal(...args: any[]) {
   process.exit(1);
 }
 
-
 function elmErrors(error: any) {
   console.log(elmErrorWithColor(error.errors));
 }
 
-
 type Error = {
   path: string;
   problems: Problem[];
-}
+};
 
 type Problem = {
   title: string;
   message: (Message | string)[];
-}
+};
 
 type Message = {
   bold: boolean;
   underline: boolean;
   color: string;
   string: string;
-}
+};
 
 const elmErrorWithColor = (errors: Error[]) => {
-  const repeat = (str: string, num: number, min = 3) => [...Array(num < 0 ? min : num)].map(_ => str).join('')
+  const repeat = (str: string, num: number, min = 3) =>
+    [...Array(num < 0 ? min : num)].map((_) => str).join("");
 
   const errorToString = (error: Error): string => {
     const problemToString = (problem: Problem): string => {
       // Removing the elm-stuff/generatedFolderName from the beginning of the filepath
-      let errorPath = error.path.substr(process.cwd().length + 1).split(path.sep)
-      errorPath.shift()
-      errorPath.shift()
+      let errorPath = error.path
+        .substring(process.cwd().length + 1)
+        .split(path.sep);
+      errorPath.shift();
+      errorPath.shift();
 
-      const errorFilePath = errorPath.join(path.sep)
+      const errorFilePath = errorPath.join(path.sep);
 
       return [
-        chalk.cyan(`-- ${problem.title} ${repeat('-', 63 - problem.title.length - errorFilePath.length)} ${errorFilePath}`),
-        problem.message.map(messageToString).join('')
-      ].join('\n\n')
-    }
+        chalk.cyan(
+          `-- ${problem.title} ${repeat(
+            "-",
+            63 - problem.title.length - errorFilePath.length
+          )} ${errorFilePath}`
+        ),
+        problem.message.map(messageToString).join(""),
+      ].join("\n\n");
+    };
 
     const messageToString = (line: Message | string) => {
-      if (typeof line === 'string') {
-        return line
+      if (typeof line === "string") {
+        return line;
       } else {
         let message = line.string;
         if (line.bold) {
@@ -132,37 +139,34 @@ const elmErrorWithColor = (errors: Error[]) => {
           message = chalk.underline(message);
         }
         switch (line.color) {
-          case 'green':
+          case "green":
             message = chalk.green(message);
             break;
 
-          case 'yellow':
-            message = chalk.yellow(message)
+          case "yellow":
+            message = chalk.yellow(message);
             break;
 
-          case 'cyan':
-            message = chalk.cyan(message)
+          case "cyan":
+            message = chalk.cyan(message);
             break;
 
-          case 'RED':
-            message = chalk.red(message)
+          case "RED":
+            message = chalk.red(message);
             break;
 
           default:
             break;
         }
 
-        return message
+        return message;
       }
-    }
+    };
 
-
-    return error.problems.map(problemToString).join('\n\n')
-  }
-  return errors.map(errorToString).join('\n\n\n')
-}
-
-
+    return error.problems.map(problemToString).join("\n\n");
+  };
+  return errors.map(errorToString).join("\n\n\n");
+};
 
 /*
  * Find and check Elm executable
@@ -210,7 +214,7 @@ async function getManifest(manifestPath: string): Promise<Manifest> {
       manifest = completeApplication(manifestPath, manifest);
       return manifest;
     })
-    .catch(err => error(err));
+    .catch((err) => error(err));
 }
 
 function getManifestSync(manifestPath: string): Manifest | null {
@@ -225,12 +229,18 @@ function getManifestSync(manifestPath: string): Manifest | null {
   }
 }
 
-function completeApplication(manifestPath: string, manifest: Manifest): Manifest {
+function completeApplication(
+  manifestPath: string,
+  manifest: Manifest
+): Manifest {
   if (manifest.type !== "application") {
     return manifest;
   }
   try {
-    const elmAppPath = path.resolve(path.dirname(manifestPath), "elm-application.json");
+    const elmAppPath = path.resolve(
+      path.dirname(manifestPath),
+      "elm-application.json"
+    );
     if (fs.existsSync(elmAppPath)) {
       const elmApp = JSON.parse(fs.readFileSync(elmAppPath).toString());
       Object.assign(manifest, elmApp);
@@ -257,9 +267,13 @@ function fullname(manifest: Manifest): string {
   return `${manifest.name}/${manifest.version}`;
 }
 
-async function searchPackages(pattern: string): Promise<Record<string, Package>> {
-  let paths = await globAsync(pattern + "/elm.json", { realpath: true });
-  const manifests = await Promise.all(paths.map(path => getManifest(path)));
+async function searchPackages(
+  pattern: string
+): Promise<Record<string, Package>> {
+  let paths = await glob(pattern + "/elm.json", { realpath: true });
+  const manifests = await Promise.all(
+    paths.map((path: string) => getManifest(path))
+  );
   let packages = manifests.reduce((acc, pkg: Manifest) => {
     if (pkg.name && pkg.name in acc && pkg.version) {
       acc[pkg.name].versions.push(pkg.version);
@@ -269,7 +283,7 @@ async function searchPackages(pattern: string): Promise<Record<string, Package>>
         name: pkg.name,
         summary: pkg.summary || "",
         license: pkg.license || "Fair",
-        versions: [pkg.version]
+        versions: [pkg.version],
       };
       return acc;
     } else {
@@ -281,10 +295,12 @@ async function searchPackages(pattern: string): Promise<Record<string, Package>>
 }
 
 async function packageReleases(pattern: string): Promise<Release> {
-  const paths = await globAsync(pattern + "/elm.json", {
-    realpath: true
+  const paths = await glob(pattern + "/elm.json", {
+    realpath: true,
   });
-  const manifests = await Promise.all(paths.map(path => getManifest(path)));
+  const manifests = await Promise.all(
+    paths.map((path: string) => getManifest(path))
+  );
   let releases = manifests.reduce((releases, pkg: Manifest) => {
     if (pkg.version && pkg.timestamp) {
       releases[pkg.version] = pkg.timestamp;
@@ -300,7 +316,13 @@ function merge(objects: object[]): object {
   return objects.reduce((acc, obj) => Object.assign(acc, obj));
 }
 
-function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = true, verbose: boolean = false): Output {
+function buildDocs(
+  manifest: Manifest,
+  dir: string,
+  elm: Elm,
+  clean: boolean = true,
+  verbose: boolean = false
+): Output {
   info(`  |> building ${path.resolve(dir)} documentation`);
   try {
     if (manifest.type == "package") {
@@ -315,17 +337,25 @@ function buildDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean = t
 }
 
 // Return a docs.json or a json error report
-function buildPackageDocs(dir: string, elm: Elm, clean: boolean, verbose: boolean): Output {
+function buildPackageDocs(
+  dir: string,
+  elm: Elm,
+  clean: boolean,
+  verbose: boolean
+): Output {
   const tmpFile = tmp.fileSync({ prefix: "elm-docs-", postfix: ".json" });
   const buildDir = path.resolve(dir);
   if (!clean) {
     info(`  |> generating ${tmpFile.name} documentation`);
   }
-  const build = elm(["make", `--docs=${tmpFile.name}`, "--report=json"], buildDir);
+  const build = elm(
+    ["make", `--docs=${tmpFile.name}`, "--report=json"],
+    buildDir
+  );
   if (build.error) {
     error(`cannot build documentation (${build.error})`);
   } else if (build.stderr.toString().length > 0 && verbose) {
-    elmErrors(JSON.parse(build.stderr.toString()))
+    elmErrors(JSON.parse(build.stderr.toString()));
   }
   let docs;
   try {
@@ -344,16 +374,22 @@ function buildPackageDocs(dir: string, elm: Elm, clean: boolean, verbose: boolea
   return docs;
 }
 
-function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: boolean, verbose: boolean): Output {
+function buildApplicationDocs(
+  manifest: Manifest,
+  dir: string,
+  elm: Elm,
+  clean: boolean,
+  verbose: boolean
+): Output {
   // Build package from application manifest
   const elmStuff = path.resolve(dir, "elm-stuff");
   if (!fs.existsSync(elmStuff)) {
     fs.mkdirSync(elmStuff);
   }
   const tmpDir = tmp.dirSync({
-    dir: elmStuff,
+    tmpdir: elmStuff,
     prefix: "elm-application-",
-    unsafeCleanup: true
+    unsafeCleanup: true,
   });
   const tmpDirSrc = path.resolve(tmpDir.name, "src");
   fs.mkdirSync(tmpDirSrc);
@@ -373,12 +409,14 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: 
     "elm-version": versionToConstraint(manifest["elm-version"]),
     dependencies: {},
     "test-dependencies": {},
-    timestamp: manifest.timestamp
+    timestamp: manifest.timestamp,
   };
 
   // Add dependencies constraints
   if (manifest.dependencies.direct) {
-    for (const [name, version] of Object.entries(manifest.dependencies.direct)) {
+    for (const [name, version] of Object.entries(
+      manifest.dependencies.direct
+    )) {
       pkg.dependencies[name] = versionToConstraint(version);
     }
   }
@@ -387,7 +425,7 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: 
   let exposedModules: string[] = getExposedModules(pkg["exposed-modules"]);
 
   if (manifest["source-directories"]) {
-    manifest["source-directories"].forEach(src => {
+    manifest["source-directories"].forEach((src) => {
       const srcDir = path.resolve(src);
       importModules(srcDir, tmpDirSrc);
       const elmJsonPath = path.resolve(src, "../elm.json");
@@ -396,7 +434,9 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: 
         try {
           const srcManifest = getManifestSync(elmJsonPath);
           if (srcManifest && srcManifest.type === "package") {
-            const srcModules = getExposedModules(srcManifest["exposed-modules"]);
+            const srcModules = getExposedModules(
+              srcManifest["exposed-modules"]
+            );
             exposedModules = exposedModules.concat(srcModules);
           }
         } catch (err) {
@@ -419,14 +459,16 @@ function buildApplicationDocs(manifest: Manifest, dir: string, elm: Elm, clean: 
   return docs;
 }
 
-function getExposedModules(manifestExposedModules: string[] | Record<string, string[]> | null): string[] {
+function getExposedModules(
+  manifestExposedModules: string[] | Record<string, string[]> | null
+): string[] {
   let exposedModules: string[] = [];
 
   if (manifestExposedModules) {
     if (Array.isArray(manifestExposedModules)) {
       exposedModules = manifestExposedModules;
     } else if (typeof manifestExposedModules === "object") {
-      Object.values(manifestExposedModules).forEach(modules => {
+      Object.values(manifestExposedModules).forEach((modules) => {
         exposedModules = exposedModules.concat(modules);
       });
     }
@@ -435,7 +477,7 @@ function getExposedModules(manifestExposedModules: string[] | Record<string, str
 }
 
 function importModules(srcDir: string, dstDir: string) {
-  glob.sync("**/*.elm", { cwd: srcDir }).forEach(elm => {
+  globSync("**/*.elm", { cwd: srcDir }).forEach((elm) => {
     try {
       const dir = path.resolve(dstDir, path.dirname(elm));
       mkdirSyncRecursive(path.resolve(dstDir, dir));
@@ -445,20 +487,23 @@ function importModules(srcDir: string, dstDir: string) {
       if (module.match(/^port +module /) !== null) {
         // Stub ports by subscriptions and commands that do nothing
         info(`  |> stubbing ${elm} ports`);
-        module = module.replace(/^port +([^ :]+)([^\n]+)$/mg, (match, name, decl, _off, _str) => {
-          if (name === "module") {
-            return ["module", decl].join(" ");
-          } else if (decl.includes("Sub")) {
-            info("  |> stubbing incoming port", name);
-            return name + " " + decl + "\n" + name + " = always Sub.none\n";
-          } else if (decl.includes("Cmd")) {
-            info("  |> stubbing outgoing port", name);
-            return name + " " + decl + "\n" + name + " = always Cmd.none\n";
-          } else {
-            warning("unmatched", match);
+        module = module.replace(
+          /^port +([^ :]+)([^\n]+)$/gm,
+          (match, name, decl, _off, _str) => {
+            if (name === "module") {
+              return ["module", decl].join(" ");
+            } else if (decl.includes("Sub")) {
+              info("  |> stubbing incoming port", name);
+              return name + " " + decl + "\n" + name + " = always Sub.none\n";
+            } else if (decl.includes("Cmd")) {
+              info("  |> stubbing outgoing port", name);
+              return name + " " + decl + "\n" + name + " = always Cmd.none\n";
+            } else {
+              warning("unmatched", match);
+            }
+            return match;
           }
-          return match;
-        });
+        );
         fs.writeFileSync(dstModulePath, module);
       } else {
         linkModule(srcModulePath, dstModulePath);
@@ -508,22 +553,28 @@ function versionToConstraint(version: string): string {
 
 class DocServer {
   options: Options;
-  elm: Elm;
-  elmVersion: string;
-  elmCache: string;
-  app: expressWs.Application;
-  ws: expressWs.Instance;
-  wss: ws.Server;
-  manifest: Manifest | null;
+  private elm: Elm;
+  private elmVersion: string;
+  private elmCache: string;
+  private app: expressWs.Application;
+  private ws: expressWs.Instance;
+  private wss: ws.Server;
+  private manifest: Manifest | null;
 
   constructor(options?: Options) {
-    const { dir = ".", port = 8000, browser = true, reload = true, debug = false } = options || {};
+    const {
+      dir = ".",
+      port = 8000,
+      browser = true,
+      reload = true,
+      debug = false,
+    } = options || {};
     this.options = {
       browser,
       debug,
       dir: fs.lstatSync(dir).isFile() ? path.dirname(dir) : path.resolve(dir),
       port,
-      reload
+      reload,
     };
 
     try {
@@ -541,11 +592,15 @@ class DocServer {
     this.manifest = getManifestSync("elm.json");
 
     info(
-      chalk`{bold elm-doc-preview ${npmPackage.version}} using elm ${this.elmVersion}`
+      chalk.bold(`elm-doc-preview ${version}`),
+      `using elm ${this.elmVersion}`
     );
     if (this.manifest && this.manifest.name && this.manifest.version) {
-      info(chalk`Previewing {magenta ${this.manifest.name} ${this.manifest.version}}`,
-        `from ${this.options.dir}`);
+      info(
+        "Previewing",
+        chalk.magenta(`${this.manifest.name} ${this.manifest.version}`),
+        `from ${this.options.dir}`
+      );
     } else {
       info(
         `No package or application found in ${this.options.dir},`,
@@ -559,17 +614,20 @@ class DocServer {
     }
   }
 
-  setupWebServer() {
+  private setupWebServer() {
+    const filename = fileURLToPath(import.meta.url);
+    const dirname = path.dirname(filename);
+
     this.app.use(
       "/",
-      express.static(path.join(__dirname, "../static"), {
-        index: "../static/index.html"
+      express.static(path.join(dirname, "../static"), {
+        index: "../static/index.html",
       })
     );
 
     // websockets
     this.app.ws("/", (socket, req) => {
-      info(`  |> ${req.connection.remoteAddress} connected`);
+      info(`  |> ${req.socket.remoteAddress} connected`);
       socket.on("close", () => {
         info("  |> client disconnected");
       });
@@ -583,13 +641,16 @@ class DocServer {
     });
     // search.json
     this.app.get("/search.json", (_req, res) => {
-      Promise.all([`${this.elmCache}/*/*/*`, "."]
-        .map(pattern => searchPackages(pattern)))
-        .then(packagesArray => {
+      Promise.all(
+        [`${this.elmCache}/*/*/*`, "."].map((pattern) =>
+          searchPackages(pattern)
+        )
+      )
+        .then((packagesArray) => {
           // add/overwrite cache with project
           res.json(Object.values(merge(packagesArray)));
         })
-        .catch(err => error(err));
+        .catch((err) => error(err));
     });
 
     // releases.json
@@ -600,36 +661,43 @@ class DocServer {
       if (this.manifest && this.manifest.name === name) {
         dirs.push(".");
       }
-      Promise.all(dirs.map(dir => packageReleases(dir)))
-        .then(releasesArray => {
+      Promise.all(dirs.map((dir) => packageReleases(dir)))
+        .then((releasesArray) => {
           // add/overwrite cache with project
           res.json(merge(releasesArray));
         })
-        .catch(err => error(err));
+        .catch((err) => error(err));
     });
 
     // docs.json
-    this.app.get("/packages/:author/:project/:version/docs.json", (req, res) => {
-      const p = req.params;
-      const name = `${p.author}/${p.project}/${p.version}`;
-      if (this.manifest && fullname(this.manifest) === name) {
-        res.json(buildDocs(this.manifest, ".", this.elm, !this.options.debug));
-      } else {
-        res.sendFile(path.resolve(this.elmCache, name, "docs.json"));
+    this.app.get(
+      "/packages/:author/:project/:version/docs.json",
+      (req, res) => {
+        const p = req.params;
+        const name = `${p.author}/${p.project}/${p.version}`;
+        if (this.manifest && fullname(this.manifest) === name) {
+          res.json(
+            buildDocs(this.manifest, ".", this.elm, !this.options.debug)
+          );
+        } else {
+          res.sendFile(path.resolve(this.elmCache, name, "docs.json"));
+        }
       }
-    }
     );
 
     // Serve README.md files
-    this.app.get("/packages/:author/:project/:version/README.md", (req, res) => {
-      const p = req.params;
-      const name = [p.author, p.project, p.version].join("/");
-      if (this.manifest && fullname(this.manifest) === name) {
-        res.sendFile(path.resolve(".", "README.md"));
-      } else {
-        res.sendFile(path.resolve(this.elmCache, name, "README.md"));
+    this.app.get(
+      "/packages/:author/:project/:version/README.md",
+      (req, res) => {
+        const p = req.params;
+        const name = [p.author, p.project, p.version].join("/");
+        if (this.manifest && fullname(this.manifest) === name) {
+          res.sendFile(path.resolve(".", "README.md"));
+        } else {
+          res.sendFile(path.resolve(this.elmCache, name, "README.md"));
+        }
       }
-    });
+    );
 
     // Serve elm.json files
     this.app.get("/packages/:author/:project/:version/elm.json", (req, res) => {
@@ -650,29 +718,31 @@ class DocServer {
     };
     // Serve project source
     if (this.manifest) {
-      this.app.use(`/source/${fullname(this.manifest)}`,
+      this.app.use(
+        `/source/${fullname(this.manifest)}`,
         express.static(".", { setHeaders: setHeaders }),
         serveIndex(".", { icons: true })
       );
     }
     // Serve cached packages source
-    this.app.use("/source",
+    this.app.use(
+      "/source",
       express.static(this.elmCache, { setHeaders: setHeaders }),
       serveIndex(this.elmCache, { icons: true })
     );
 
     // default route
     this.app.get("*", (_req, res) => {
-      res.sendFile(path.join(__dirname, "../static/index.html"));
+      res.sendFile(path.join(dirname, "../static/index.html"));
     });
   }
 
-  setupFilesWatcher() {
+  private setupFilesWatcher() {
     // We use glob patterns to avoid https://github.com/paulmillr/chokidar/issues/237.
     // We want to watch ["elm.json", "elm-application.json", "README.md"].
     const glob = ["elm*.json", "README*.md"];
     if (this.manifest && this.manifest["source-directories"]) {
-      this.manifest["source-directories"].forEach(src => {
+      this.manifest["source-directories"].forEach((src) => {
         glob.push(src + "/**/*.elm");
         glob.push(path.normalize(src + "/../elm.json"));
       });
@@ -682,12 +752,12 @@ class DocServer {
     const watcher = chokidar.watch(glob, {
       ignored: ["**/node_modules", "**/elm-stuff", "**/.git"],
       ignoreInitial: true,
-      atomic: true
+      atomic: true,
     });
 
     watcher
       .on("all", (_event, filepath) => this.onChange(filepath))
-      .on("error", err => error(err))
+      .on("error", (err) => error(err))
       .on("ready", () => {
         if (this.manifest && this.manifest.type === "package") {
           info(`  |> watching package`);
@@ -700,8 +770,7 @@ class DocServer {
       });
   }
 
-
-  onChange(filepath: string) {
+  private onChange(filepath: string) {
     info("  |>", "detected", filepath, "modification");
     if (filepath == "README.md") {
       this.sendReadme();
@@ -714,9 +783,13 @@ class DocServer {
     }
   }
 
-  sendReadme() {
+  private sendReadme() {
     const readme = path.join(this.options.dir, "README.md");
-    if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
+    if (
+      this.manifest &&
+      this.manifest.name &&
+      this.manifest.name.includes("/")
+    ) {
       const [author, project] = this.manifest.name.split("/", 2);
       try {
         info("  |>", "sending README");
@@ -726,8 +799,8 @@ class DocServer {
             author: author,
             project: project,
             version: this.manifest.version,
-            readme: fs.readFileSync(readme).toString()
-          }
+            readme: fs.readFileSync(readme).toString(),
+          },
         });
       } catch (err) {
         error(err);
@@ -735,8 +808,12 @@ class DocServer {
     }
   }
 
-  sendManifest() {
-    if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
+  private sendManifest() {
+    if (
+      this.manifest &&
+      this.manifest.name &&
+      this.manifest.name.includes("/")
+    ) {
       const [author, project] = this.manifest.name.split("/", 2);
       info("  |>", "sending Manifest");
       this.broadcast({
@@ -745,15 +822,24 @@ class DocServer {
           author: author,
           project: project,
           version: this.manifest.version,
-          manifest: this.manifest
-        }
+          manifest: this.manifest,
+        },
       });
     }
   }
 
-  sendDocs() {
-    if (this.manifest && this.manifest.name && this.manifest.name.includes("/")) {
-      const docs = buildDocs(this.manifest, this.options.dir, this.elm, !this.options.debug);
+  private sendDocs() {
+    if (
+      this.manifest &&
+      this.manifest.name &&
+      this.manifest.name.includes("/")
+    ) {
+      const docs = buildDocs(
+        this.manifest,
+        this.options.dir,
+        this.elm,
+        !this.options.debug
+      );
       const [author, project] = this.manifest.name.split("/", 2);
       info("  |>", "sending Docs");
       this.broadcast({
@@ -763,30 +849,44 @@ class DocServer {
           project: project,
           version: this.manifest.version,
           time: this.manifest.timestamp,
-          docs: docs
-        }
+          docs: docs,
+        },
       });
     }
   }
 
   listen() {
     return this.app.listen(this.options.port, () => {
-      if (this.options.browser && this.manifest && this.manifest.name && this.manifest.version) {
-        open(`http://localhost:${this.options.port}/packages/${this.manifest.name}/${this.manifest.version}/`);
+      if (
+        this.options.browser &&
+        this.manifest &&
+        this.manifest.name &&
+        this.manifest.version
+      ) {
+        open(
+          `http://localhost:${this.options.port}/packages/${this.manifest.name}/${this.manifest.version}/`
+        );
       } else if (this.options.browser) {
         open(`http://localhost:${this.options.port}`);
       }
       info(
-        chalk`{blue Browse} {bold {green <http://localhost:${this.options.port.toString()}>}}`,
-        chalk`{blue to see your documentation}`
+        chalk.blue("Browse"),
+        chalk.bold.green(`http://localhost:${this.options.port.toString()}`),
+        chalk.blue("to see your documentation")
       );
     });
   }
 
   make(filename: string) {
     if (this.manifest) {
-      const docs = buildDocs(this.manifest, this.options.dir, this.elm, !this.options.debug, true);
-      info(`  |> writing documentation into ${filename}`)
+      const docs = buildDocs(
+        this.manifest,
+        this.options.dir,
+        this.elm,
+        !this.options.debug,
+        true
+      );
+      info(`  |> writing documentation into ${filename}`);
       if (Array.isArray(docs) && docs.length > 0) {
         if (filename !== "/dev/null") {
           try {
@@ -802,14 +902,13 @@ class DocServer {
     }
   }
 
-  broadcast(obj: object) {
-    this.wss.clients.forEach(client => {
+  private broadcast(obj: object) {
+    this.wss.clients.forEach((client) => {
       if (client.readyState === ws.OPEN) {
         client.send(JSON.stringify(obj));
       }
     });
   }
-
 }
 
-module.exports = DocServer;
+export default DocServer;
