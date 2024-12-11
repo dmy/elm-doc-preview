@@ -46,10 +46,12 @@ Local documentation is stored in the browser local storage to improve
 navigation.  
 Closing the preview clears it.
 
-## Offline version with hot reloading
+## Offline version with hot reloading and application support
 When editing a package documentation, it is more convenient to see updates in
 real-time. For this you can use the local version that supports hot reloading,
 see https://www.npmjs.com/package/elm-doc-preview.
+
+This version also supports applications in addition to packages.
 
 ## Credits
 
