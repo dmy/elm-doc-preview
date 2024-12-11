@@ -20,6 +20,7 @@ function init() {
         pkgPath = dir;
       }
     })
+    .option("-a, --address <address>", "the server listen address", "127.0.0.1")
     .option("-b, --no-browser", "do not open in browser when server starts")
     .option(
       "-d, --debug",
@@ -29,7 +30,7 @@ function init() {
       "-o, --output <docs.json>",
       "generate docs and exit with status code (/dev/null supported)"
     )
-    .option("-p, --port <port>", "the server listening port", Math.floor, 8000)
+    .option("-p, --port <port>", "the server listen port", Math.floor, 8000)
     .option("-r, --no-reload", "disable hot reloading");
 
   program.on("--help", () => {

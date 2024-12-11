@@ -26,6 +26,7 @@ express.static.mime.define({ "text/plain; charset=UTF-8": ["elm"] });
 express.static.mime.define({ "text/plain; charset=UTF-8": ["md"] });
 
 interface Options {
+  address: string;
   debug: boolean;
   dir: string;
   port: number;
@@ -567,6 +568,7 @@ class DocServer {
 
   constructor(options?: Options) {
     const {
+      address = "127.0.0.1",
       dir = ".",
       port = 8000,
       browser = true,
@@ -574,6 +576,7 @@ class DocServer {
       debug = false,
     } = options || {};
     this.options = {
+      address,
       browser,
       debug,
       dir: fs.lstatSync(dir).isFile() ? path.dirname(dir) : path.resolve(dir),
@@ -860,7 +863,7 @@ class DocServer {
   }
 
   listen() {
-    return this.app.listen(this.options.port, () => {
+    return this.app.listen(this.options.port, this.options.address, () => {
       if (
         this.options.browser &&
         this.manifest &&

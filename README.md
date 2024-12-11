@@ -36,12 +36,14 @@ Usage: edp|elm-doc-preview [options] [path_to_package_or_application]
 
 Options:
   -V, --version             output the version number
+  -a, --address <address>   the server listen address (default: "127.0.0.1")
   -b, --no-browser          do not open in browser when server starts
   -d, --debug               enable debug (display watched files and keep temporary files)
   -o, --output <docs.json>  generate docs and exit with status code (/dev/null supported)
-  -p, --port <port>         the server listening port (default: 8000)
+  -p, --port <port>         the server listen port (default: 8000)
   -r, --no-reload           disable hot reloading
   -h, --help                display help for command
+
 
 Environment variables:
   ELM_HOME           Elm home directory (cache)
