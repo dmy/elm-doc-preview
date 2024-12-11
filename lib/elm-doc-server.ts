@@ -343,7 +343,7 @@ function buildPackageDocs(
   clean: boolean,
   verbose: boolean
 ): Output {
-  const tmpFile = tmp.fileSync({ prefix: "elm-docs-", postfix: ".json" });
+  const tmpFile = tmp.fileSync({ prefix: "elm-docs", postfix: ".json" });
   const buildDir = path.resolve(dir);
   if (!clean) {
     info(`  |> generating ${tmpFile.name} documentation`);
@@ -364,6 +364,10 @@ function buildPackageDocs(
     try {
       // Return Errors JSON report
       docs = JSON.parse(build.stderr.toString());
+      docs.errors.forEach((error: any) => {
+        error.path = error.path.substring(buildDir.length + 1);
+        return error;
+      });
     } catch (err) {
       docs = {};
     }

@@ -23,7 +23,7 @@ view error =
         , style "font-family" "monospace"
         , style "white-space" "pre-wrap"
         , style "background-color" "black"
-        , style "padding" "2em"
+        , style "padding" "2em .5em"
         , style "margin-top" "40px"
         ]
         (viewErrorHelp error)
