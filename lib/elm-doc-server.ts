@@ -82,7 +82,9 @@ function fatal(...args: any[]) {
 }
 
 function elmErrors(error: any) {
-  console.log(elmErrorWithColor(error.errors));
+  if (error.type === "compile-errors") {
+    console.log(elmErrorWithColor(error.errors));
+  }
 }
 
 type Error = {
@@ -365,10 +367,11 @@ function buildPackageDocs(
     try {
       // Return Errors JSON report
       docs = JSON.parse(build.stderr.toString());
-      docs.errors.forEach((error: any) => {
-        error.path = error.path.substring(buildDir.length + 1);
-        return error;
-      });
+      if (docs.type === "compile-errors") {
+        docs.errors.forEach((error: any) => {
+          error.path = error.path.substring(buildDir.length + 1);
+        });
+      }
     } catch (err) {
       docs = {};
     }
