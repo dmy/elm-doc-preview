@@ -101,7 +101,7 @@ each field:
 {
     "name": "dmy/elm-doc-preview",
     "summary": "Offline documentation previewer",
-    "version": "6.0.0",
+    "version": "6.0.1",
     "exposed-modules": [
         "Href",
         "Session",
