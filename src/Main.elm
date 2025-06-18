@@ -24,6 +24,7 @@ import Regex
 import Svg exposing (svg)
 import Svg.Attributes exposing (d, fill, height, viewBox, width)
 import Task
+import Time
 import Url exposing (Url)
 import Url.Builder
 import Url.Parser exposing (Parser)
@@ -105,6 +106,7 @@ type alias Model =
     , online : Bool
     , error : Maybe Error.Error
     , filter : String
+    , now : Time.Posix
     }
 
 
@@ -147,6 +149,7 @@ type alias Flags =
     { readme : Maybe String
     , docs : Maybe String
     , online : Bool
+    , now : Int
     }
 
 
@@ -174,6 +177,7 @@ init flags url navKey =
       , online = flags.online
       , error = Nothing
       , filter = ""
+      , now = Time.millisToPosix flags.now
       }
     , Cmd.batch
         [ focusOpenFilesLink
@@ -292,7 +296,7 @@ view model =
                 (Decode.map alwaysPreventDefault dropDecoder)
             ]
             [ viewMain model
-            , footer
+            , footer (Time.toYear Time.utc model.now)
             ]
         ]
     }
@@ -809,14 +813,16 @@ unslugify str =
 -- Footer
 
 
-footer : Html msg
-footer =
+footer : Int -> Html msg
+footer year =
     div [ class "footer" ]
         [ a
             [ class "grey-link"
             , href "https://github.com/dmy/elm-doc-preview"
             ]
-            [ text "dmy@2020" ]
+            [ text "dmy@"
+            , text (String.fromInt year)
+            ]
         ]
 
 

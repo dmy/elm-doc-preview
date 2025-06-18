@@ -2,7 +2,8 @@ var app = Elm.Main.init({
   flags: {
     readme: localStorage.getItem("readme"),
     docs: localStorage.getItem("docs"),
-    online: true
+    online: true,
+    now: Date.now()
   }
 });
 
