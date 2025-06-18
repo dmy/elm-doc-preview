@@ -26,11 +26,11 @@ to a github repository and use the following query parameters:
 > The branch, tag or commit hash.
 
 Examples with https://github.com/dmy/elm-doc-example:
-* https://elm-doc-preview.netlify.com?repo=dmy/elm-doc-example
-* https://elm-doc-preview.netlify.com?repo=dmy/elm-doc-example&version=master
-* https://elm-doc-preview.netlify.com?repo=dmy/elm-doc-example&version=ba1054
-* https://elm-doc-preview.netlify.com/ModuleA?repo=dmy/elm-doc-example
-* https://elm-doc-preview.netlify.com/ModuleB?repo=dmy/elm-doc-example#TypeB
+* https://elm-doc-preview.netlify.app?repo=dmy/elm-doc-example
+* https://elm-doc-preview.netlify.app?repo=dmy/elm-doc-example&version=master
+* https://elm-doc-preview.netlify.app?repo=dmy/elm-doc-example&version=ba1054
+* https://elm-doc-preview.netlify.app/ModuleA?repo=dmy/elm-doc-example
+* https://elm-doc-preview.netlify.app/ModuleB?repo=dmy/elm-doc-example#TypeB
 
 Notes:
 * Paths to modules and symbols fragments are supported, so links from the
