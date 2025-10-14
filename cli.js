@@ -31,7 +31,8 @@ function init() {
       "generate docs and exit with status code (/dev/null supported)"
     )
     .option("-p, --port <port>", "the server listen port", Math.floor, 8000)
-    .option("-r, --no-reload", "disable hot reloading");
+    .option("-r, --no-reload", "disable hot reloading")
+    .option("-v, --verbose", "verbose output (including errors to console when in server mode)");
 
   program.on("--help", () => {
     console.log("");

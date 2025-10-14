@@ -32,6 +32,7 @@ interface Options {
   port: number;
   browser: boolean;
   reload: boolean;
+  verbose: boolean;
 }
 
 interface Manifest {
@@ -357,8 +358,15 @@ function buildPackageDocs(
   );
   if (build.error) {
     error(`cannot build documentation (${build.error})`);
-  } else if (build.stderr.toString().length > 0 && verbose) {
-    elmErrors(JSON.parse(build.stderr.toString()));
+  } else if (build.stderr.toString().length > 0) {
+    let howToSeeErrors = "";
+    if (!verbose) {
+      howToSeeErrors = " Add the --verbose flag to see details.";
+    }
+    console.error(`Errors detected.${howToSeeErrors}`);
+    if (verbose) {
+      elmErrors(JSON.parse(build.stderr.toString()));
+    }
   }
   let docs;
   try {
@@ -577,6 +585,7 @@ class DocServer {
       browser = true,
       reload = true,
       debug = false,
+      verbose = false,
     } = options || {};
     this.options = {
       address,
@@ -585,6 +594,7 @@ class DocServer {
       dir: fs.lstatSync(dir).isFile() ? path.dirname(dir) : path.resolve(dir),
       port,
       reload,
+      verbose,
     };
 
     try {
@@ -687,7 +697,13 @@ class DocServer {
         const name = `${p.author}/${p.project}/${p.version}`;
         if (this.manifest && fullname(this.manifest) === name) {
           res.json(
-            buildDocs(this.manifest, ".", this.elm, !this.options.debug)
+            buildDocs(
+              this.manifest,
+              ".",
+              this.elm,
+              !this.options.debug,
+              this.options.verbose,
+            ),
           );
         } else {
           res.sendFile(path.resolve(this.elmCache, name, "docs.json"));
@@ -848,7 +864,8 @@ class DocServer {
         this.manifest,
         this.options.dir,
         this.elm,
-        !this.options.debug
+        !this.options.debug,
+        this.options.verbose,
       );
       const [author, project] = this.manifest.name.split("/", 2);
       info("  |>", "sending Docs");
