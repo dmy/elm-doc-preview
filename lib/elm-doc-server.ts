@@ -368,6 +368,9 @@ function buildPackageDocs(
       elmErrors(JSON.parse(build.stderr.toString()));
     }
   }
+  else {
+    info("✅ Documentation build succeeded!")
+  }
   let docs;
   try {
     docs = JSON.parse(fs.readFileSync(tmpFile.name).toString());
