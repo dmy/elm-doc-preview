@@ -32,6 +32,7 @@ interface Options {
   port: number;
   browser: boolean;
   reload: boolean;
+  initial: boolean;
 }
 
 interface Manifest {
@@ -577,6 +578,7 @@ class DocServer {
       browser = true,
       reload = true,
       debug = false,
+      initial = false,
     } = options || {};
     this.options = {
       address,
@@ -585,6 +587,7 @@ class DocServer {
       dir: fs.lstatSync(dir).isFile() ? path.dirname(dir) : path.resolve(dir),
       port,
       reload,
+      initial,
     };
 
     try {
@@ -776,6 +779,14 @@ class DocServer {
         }
         if (this.options.debug) {
           info(watcher.getWatched());
+        }
+        if (this.manifest && this.options.initial) {
+          buildDocs(
+            this.manifest,
+            ".",
+            this.elm,
+            !this.options.debug,
+          )
         }
       });
   }
