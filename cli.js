@@ -32,7 +32,7 @@ function init() {
     )
     .option("-p, --port <port>", "the server listen port", Math.floor, 8000)
     .option("-r, --no-reload", "disable hot reloading")
-    .option("-v, --verbose", "verbose console output (including documentation errors in server mode, output mode always shows errors)");
+    .option("-v, --verbose", "verbose console output");
 
   program.on("--help", () => {
     console.log("");
