@@ -172,6 +172,23 @@ const elmErrorWithColor = (errors: Error[]) => {
 };
 
 /*
+ * Wait and trigger event once after some time.
+ *
+ * Sources:
+ *   - https://github.com/samhuk/chokidar-debounced/tree/master
+ *   - https://www.joshwcomeau.com/snippets/javascript/debounce/
+ */
+const debounce = (fn: (...args: any[]) => void, debounceMilliseconds: number) => {
+  let currentTimeout: any = null;
+  return (...args: any[]) => {
+    clearTimeout(currentTimeout);
+    currentTimeout = setTimeout(() => {
+      fn(...args)
+    }, debounceMilliseconds);
+  };
+};
+
+/*
  * Find and check Elm executable
  */
 function getElm(): [Elm, string] {
@@ -765,8 +782,11 @@ class DocServer {
       atomic: true,
     });
 
+    const self = this;
+    let sendDocsDebounced = debounce(() => self.sendDocs(), 250)
+
     watcher
-      .on("all", (_event, filepath) => this.onChange(filepath))
+      .on("all", (_event, filepath) => this.onChange(filepath, sendDocsDebounced))
       .on("error", (err) => error(err))
       .on("ready", () => {
         if (this.manifest && this.manifest.type === "package") {
@@ -780,16 +800,16 @@ class DocServer {
       });
   }
 
-  private onChange(filepath: string) {
+  private onChange(filepath: string, sendDocsDebounced: () => void) {
     info("  |>", "detected", filepath, "modification");
     if (filepath == "README.md") {
       this.sendReadme();
     } else if (filepath.endsWith(".json")) {
       this.manifest = getManifestSync("elm.json");
       this.sendManifest();
-      this.sendDocs();
+      sendDocsDebounced()
     } else {
-      this.sendDocs();
+      sendDocsDebounced()
     }
   }
 
