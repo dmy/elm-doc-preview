@@ -85,6 +85,20 @@ function elmErrors(error: any) {
   if (error.type === "compile-errors") {
     console.log(elmErrorWithColor(error.errors));
   }
+  else {
+    // Map a GeneralProblem to Error
+    // https://package.elm-lang.org/packages/elm/project-metadata-utils/latest/Elm-Error#Error
+    const errors = [
+      {
+        path: error.path,
+        problems: [{
+          title: error.title,
+          message: error.message
+        }]
+      }
+    ]
+    console.log(elmErrorWithColor(errors));
+  }
 }
 
 type Error = {
