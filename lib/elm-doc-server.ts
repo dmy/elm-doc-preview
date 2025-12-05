@@ -359,7 +359,14 @@ function buildPackageDocs(
     error(`cannot build documentation (${build.error})`);
   } else if (build.stderr.toString().length > 0) {
     console.error("Errors detected.");
-    elmErrors(JSON.parse(build.stderr.toString()));
+    const errorString = build.stderr.toString();
+    try {
+      const json = JSON.parse(errorString);
+      elmErrors(json);
+    }
+    catch (err) {
+      console.log(errorString)
+    }
   }
   else {
     info("✅ Documentation build succeeded!")
