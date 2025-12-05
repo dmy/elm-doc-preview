@@ -922,7 +922,7 @@ class DocServer {
         this.options.dir,
         this.elm,
         !this.options.debug,
-        true
+        this.options.verbose
       );
       info(`  |> writing documentation into ${filename}`);
       if (Array.isArray(docs) && docs.length > 0) {
