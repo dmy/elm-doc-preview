@@ -32,6 +32,7 @@ interface Options {
   port: number;
   browser: boolean;
   reload: boolean;
+  verbose: boolean;
 }
 
 interface Manifest {
@@ -329,7 +330,7 @@ function buildDocs(
   info(`  |> building ${path.resolve(dir)} documentation`);
   try {
     if (manifest.type == "package") {
-      return buildPackageDocs(dir, elm, clean, verbose);
+      return buildPackageDocs(dir, elm, clean);
     } else if (manifest.type == "application") {
       return buildApplicationDocs(manifest, dir, elm, clean, verbose);
     }
@@ -344,7 +345,6 @@ function buildPackageDocs(
   dir: string,
   elm: Elm,
   clean: boolean,
-  verbose: boolean
 ): Output {
   const tmpFile = tmp.fileSync({ prefix: "elm-docs", postfix: ".json" });
   const buildDir = path.resolve(dir);
@@ -357,8 +357,19 @@ function buildPackageDocs(
   );
   if (build.error) {
     error(`cannot build documentation (${build.error})`);
-  } else if (build.stderr.toString().length > 0 && verbose) {
-    elmErrors(JSON.parse(build.stderr.toString()));
+  } else if (build.stderr.toString().length > 0) {
+    console.error("Errors detected.");
+    const errorString = build.stderr.toString();
+    try {
+      const json = JSON.parse(errorString);
+      elmErrors(json);
+    }
+    catch (err) {
+      console.log(errorString)
+    }
+  }
+  else {
+    info("✅ Documentation build succeeded!")
   }
   let docs;
   try {
@@ -435,7 +446,7 @@ function buildApplicationDocs(
   if (manifest["source-directories"]) {
     manifest["source-directories"].forEach((src) => {
       const srcDir = path.resolve(src);
-      importModules(srcDir, tmpDirSrc);
+      importModules(srcDir, tmpDirSrc, verbose);
       const elmJsonPath = path.resolve(src, "../elm.json");
 
       if (fs.existsSync(elmJsonPath)) {
@@ -458,7 +469,7 @@ function buildApplicationDocs(
   // Write elm.json and generate package documentation
   const elmJson = JSON.stringify(pkg);
   fs.writeFileSync(tmpDir.name + "/elm.json", elmJson, "utf8");
-  const docs = buildPackageDocs(tmpDir.name, elm, clean, verbose);
+  const docs = buildPackageDocs(tmpDir.name, elm, clean);
 
   // remove temporary directory
   if (clean) {
@@ -484,7 +495,7 @@ function getExposedModules(
   return exposedModules;
 }
 
-function importModules(srcDir: string, dstDir: string) {
+function importModules(srcDir: string, dstDir: string, verbose: boolean) {
   globSync("**/*.elm", { cwd: srcDir }).forEach((elm) => {
     try {
       const dir = path.resolve(dstDir, path.dirname(elm));
@@ -494,17 +505,25 @@ function importModules(srcDir: string, dstDir: string) {
       let module = fs.readFileSync(srcModulePath).toString();
       if (module.match(/^port +module /) !== null) {
         // Stub ports by subscriptions and commands that do nothing
-        info(`  |> stubbing ${elm} ports`);
+        let howToSeeDetails = "";
+        if (!verbose) {
+          howToSeeDetails = " Add the --verbose flag to see details.";
+        }
+        info(`  |> stubbing ${elm} ports.${howToSeeDetails}`);
         module = module.replace(
           /^port +([^ :]+)([^\n]+)$/gm,
           (match, name, decl, _off, _str) => {
             if (name === "module") {
               return ["module", decl].join(" ");
             } else if (decl.includes("Sub")) {
-              info("  |> stubbing incoming port", name);
+              if (verbose) {
+                info("  |> stubbing incoming port", name);
+              }
               return name + " " + decl + "\n" + name + " = always Sub.none\n";
             } else if (decl.includes("Cmd")) {
-              info("  |> stubbing outgoing port", name);
+              if (verbose) {
+                info("  |> stubbing outgoing port", name);
+              }
               return name + " " + decl + "\n" + name + " = always Cmd.none\n";
             } else {
               warning("unmatched", match);
@@ -577,6 +596,7 @@ class DocServer {
       browser = true,
       reload = true,
       debug = false,
+      verbose = false,
     } = options || {};
     this.options = {
       address,
@@ -585,6 +605,7 @@ class DocServer {
       dir: fs.lstatSync(dir).isFile() ? path.dirname(dir) : path.resolve(dir),
       port,
       reload,
+      verbose,
     };
 
     try {
@@ -687,7 +708,13 @@ class DocServer {
         const name = `${p.author}/${p.project}/${p.version}`;
         if (this.manifest && fullname(this.manifest) === name) {
           res.json(
-            buildDocs(this.manifest, ".", this.elm, !this.options.debug)
+            buildDocs(
+              this.manifest,
+              ".",
+              this.elm,
+              !this.options.debug,
+              this.options.verbose,
+            ),
           );
         } else {
           res.sendFile(path.resolve(this.elmCache, name, "docs.json"));
@@ -848,7 +875,8 @@ class DocServer {
         this.manifest,
         this.options.dir,
         this.elm,
-        !this.options.debug
+        !this.options.debug,
+        this.options.verbose,
       );
       const [author, project] = this.manifest.name.split("/", 2);
       info("  |>", "sending Docs");
@@ -894,7 +922,7 @@ class DocServer {
         this.options.dir,
         this.elm,
         !this.options.debug,
-        true
+        this.options.verbose
       );
       info(`  |> writing documentation into ${filename}`);
       if (Array.isArray(docs) && docs.length > 0) {
